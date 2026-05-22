@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
-#include "../unidirected_graph/unidirected_graph.hpp"
+#include "unidirected_graph.hpp"
 
 class Parser {
     // std::string output;  // TODO 
 
     private: 
         std::string read_file(const std::string& file_path);
-        std::vector<std::map<std::string, int>> parse_file(const std::string& data);
+        void parse_file(const std::string& data);
 
     public:
         Parser() = default;

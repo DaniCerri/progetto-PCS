@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include "unidirected_graph.hpp"
 
 // Metodo per leggere un file dato un percorso e ritornarlo come stringa
 std::string Parser::read_file(const std::string& file_path) {
@@ -27,19 +28,30 @@ std::string Parser::read_file(const std::string& file_path) {
     return buffer.str();
 }
 
-std::vector<std::map<std::string, int>> Parser::parse_file(std::string& data, std::string del = " ") {
-    std::vector<std::map<std::string, int>> parsed_data;
+void Parser::parse_file(std::string& data, std::string del = " ") {
+    UnidirectedGraph<int> graph_out;
 
     // Dividiamo la stringa in righe
+    // std::vector<std::string> rows;  // vettore che contiene le righe
+    std::stringstream ss(data);  // Stream con il contenuto del file
+    std::string row;  // riga temporanea
 
-    // Controlliamo se la riga è vuota o solo con spazi per saltarla
-    
-    // Dividiamo la riga in base agli spazi
-    
+    while (std::getline(ss, row, '\n')) {
+        // Controlliamo se la riga è vuota o solo con spazi per saltarla
+        if (row.find_first_not_of(" \n\r\t\f\v") == std::string::npos) {
+            continue;
+        }
+
+        // Dividiamo la riga in base agli spazi
+        
+    }    
     // Controlliamo che ci siano rimasti 4 elementi distinti
-    // Prendiamo il primo elemento come chiave (nome componente)
-    // Prendiamo i restanti 3 elementi come valori (valore, nodo1, nodo2)
-    // Aggiungiamo il map alla lista
+
+    // Costruiamo il Componente con il primo elemento (nome) e il secondo elemento (valore)
+    
+    // Prendiamo i restanti 2 elementi come nodo1, nodo2
+
+    // Aggiungiamo l'edge al grafo
 
     return parsed_data;
 }
