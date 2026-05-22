@@ -1,0 +1,60 @@
+# Build directories
+build/
+Build/
+BUILD/
+cmake-build-*/
+out/build/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+*.cmake.in
+
+# Make generated files
+Makefile
+*.make
+
+# Compiled object files / artifacts
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Libraries
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+a.out
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
