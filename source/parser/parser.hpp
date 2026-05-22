@@ -7,7 +7,7 @@ class Parser {
 
     private: 
         std::string read_file(const std::string& file_path);
-        void parse_file(const std::string& data);
+        void parse_file(const std::string& data, const std::string& del = " ");
 
     public:
         Parser() = default;

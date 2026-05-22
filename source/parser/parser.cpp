@@ -28,7 +28,7 @@ std::string Parser::read_file(const std::string& file_path) {
     return buffer.str();
 }
 
-void Parser::parse_file(std::string& data, std::string del = " ") {
+void Parser::parse_file(const std::string& data, const std::string& del) {
     UnidirectedGraph<int> graph_out;
 
     // Dividiamo la stringa in righe
@@ -42,18 +42,30 @@ void Parser::parse_file(std::string& data, std::string del = " ") {
             continue;
         }
 
-        // Dividiamo la riga in base agli spazi
-        
-    }    
-    // Controlliamo che ci siano rimasti 4 elementi distinti
+        // Dividiamo la riga in base al delimitatore (numero indefinito tra i valori)
+        std::vector<std::string> tokens;
+        size_t start = row.find_first_not_of(del);
+        while (start != std::string::npos) {
+            size_t end = row.find_first_of(del, start);
+            tokens.push_back(row.substr(start, end - start));
+            start = row.find_first_not_of(del, end);
+        }
 
-    // Costruiamo il Componente con il primo elemento (nome) e il secondo elemento (valore)
-    
-    // Prendiamo i restanti 2 elementi come nodo1, nodo2
+        // Controlliamo che ci siano rimasti 4 elementi distinti
+        if (tokens.size() != 4) {
+            throw std::runtime_error("Riga malformata: " + row);
+        }
 
-    // Aggiungiamo l'edge al grafo
+        // Costruiamo il Componente con il primo elemento (nome) e il secondo (valore)
+        Component comp(tokens[0], std::stod(tokens[1]));
 
-    return parsed_data;
+        // Prendiamo i restanti 2 elementi come nodo1, nodo2
+        int n1 = std::stoi(tokens[2]);
+        int n2 = std::stoi(tokens[3]);
+
+        // Aggiungiamo l'edge al grafo TODO: aggiungere anche il componente
+        graph_out.add_edge(n1, n2);
+    }
 }
 
 void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) {
