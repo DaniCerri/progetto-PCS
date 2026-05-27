@@ -11,5 +11,7 @@ Si prendono i restanti 2 elementi, che sono i nodi
 
 DA FARE: modificare gli "edges" affinché faccia distinzione se entrata positiva o negativa. Mettere un elenco di componenti. Classe componente, con nome e valore. In base alla prima lettera si distingue resistenza e tensione.
 
+--> Per fare questo abbiamo scelto di inserire all'interno della classe componente il nodo di "partenza" in modo che il solver sappiamo se c'è un generatore da che lato punta il +
 
+Per ora stiamo importando (quasi) ciecamente dalle esercitazioni passate. Ci sarà una fase in cui tagliamo il non necessario.
 
