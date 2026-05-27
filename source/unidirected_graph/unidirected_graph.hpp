@@ -41,6 +41,21 @@ public:
         vertices.insert(v);
     }
 
+    void add_edge(const T& u, const T& v, const std::vector<Component>& components) {
+        UnidirectedEdge<T> e(u, v);
+        // aggiungiamo i componenti al lato del grafo appena aggiunto
+        e.add_components(components);
+        for (auto& x : edges)
+            // TODO: migliorare controllo che il componente non sia duplicato nel ramo
+            if (x == e) {
+                x.add_components(components);
+                return;
+            }
+        edges.push_back(e);
+        vertices.insert(u);
+        vertices.insert(v);
+    }
+
     // restituisce i vicini di un nodo
     std::list<T> neighbours(const T& node) const {
         std::list<T> result;
@@ -82,8 +97,10 @@ public:
     UnidirectedGraph operator-(const UnidirectedGraph& other) const {
         UnidirectedGraph result;
         for (const auto& e : edges) {
-            if (other.edge_number(e) == other.edges.size())
-                result.add_edge(e.from(), e.to());
+            if (other.edge_number(e) == other.edges.size()) {
+                for (const auto& c : e.get_components())
+                    result.add_edge(e.from(), e.to(), c);
+            }
         }
         return result;
     }
