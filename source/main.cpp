@@ -47,10 +47,21 @@ int main (const int argc, char* argv[]) {
     std::vector<std::list<int>> essential_cycles;
     find_essential_cycles_dfs(circuito, essential_cycles);
 
-    for(const auto& cycle : essential_cycles) {
-        for(const auto& node : cycle) {
+    // salvo i cicli su file per la visualizzazione (un ciclo per riga,
+    // nodi separati da spazio)
+    std::string cycles_out = file_output;
+    if (cycles_out.size() >= ext.size() &&
+        cycles_out.compare(cycles_out.size() - ext.size(), ext.size(), ext) == 0) {
+        cycles_out.resize(cycles_out.size() - ext.size());
+    }
+    cycles_out += ".cycles.txt";
+    std::ofstream cycles_file(cycles_out);
+    for (const auto& cycle : essential_cycles) {
+        for (const auto& node : cycle) {
+            cycles_file << node << " ";
             std::cout << node << " ";
         }
+        cycles_file << "\n";
         std::cout << std::endl;
-    } 
+    }
 }
