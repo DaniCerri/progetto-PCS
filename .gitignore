@@ -16,6 +16,9 @@ CTestTestfile.cmake
 _deps/
 *.cmake.in
 
+#output
+out/grafi/*
+
 # Make generated files
 Makefile
 *.make
