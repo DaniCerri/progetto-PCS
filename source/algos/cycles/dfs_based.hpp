@@ -35,7 +35,7 @@ void find_essential_cycles_dfs(UnidirectedGraph<T>& graph, std::vector<std::list
         // Inizializza a dimensione (N + 1) per gestire gli indici da 1 a N
         std::vector<bool> visited(graph.all_nodes().size() + 1, false);
         
-        // Se troviamo il percorso nell'albero di supporto
+        // Se troviamo il percorso nell'albero di supporto (in teoria esiste sempre)
         if (find_path(support_tree, edge.from(), edge.to(), path, visited)) {
             // Chiudi il ciclo aggiungendo il nodo di partenza alla fine
             path.push_back(edge.from()); 
