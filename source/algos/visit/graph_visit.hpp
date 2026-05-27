@@ -15,7 +15,7 @@ UnidirectedGraph<T> graph_visit(const UnidirectedGraph<T>& grafo, const T& nodo_
             if(reached.contains(v)) continue; //Se il vicino è già stato visitato, lo saltiamo
             reached.insert(v); //Aggiungiamo il nodo al set dei nodi visitati
             policy.put(v); //Inseriamo il nodo
-            albero_risultante.add_edge(u, v); //Aggiungiamo l'arco all'albero risultante
+            albero_risultante.add_edge(u, v, {}); //Aggiungiamo l'arco all'albero risultante
         }
     }
 

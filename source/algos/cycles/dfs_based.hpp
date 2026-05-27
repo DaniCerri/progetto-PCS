@@ -1,7 +1,7 @@
 #pragma once
-#include "unidirected_graph.hpp"
-#include "graph_visit.hpp"
-#include "stack.hpp"
+#include "../../unidirected_graph/unidirected_graph.hpp"
+#include "../visit/graph_visit.hpp"
+#include "../visit/stack.hpp"
 #include <vector>
 #include <list>
 #include <set>
@@ -26,8 +26,8 @@ bool find_path(const UnidirectedGraph<T>& graph, const T& start, const T& end, s
 
 template<typename T>
 void find_essential_cycles_dfs(UnidirectedGraph<T>& graph, std::vector<std::list<T>>& essential_cycles) {
-    Stack stack;
-    UnidirectedGraph<T> support_tree = graph_visit(graph, 1, stack);
+    Stack<T> stack;
+    UnidirectedGraph<T> support_tree = graph_visit(graph, *graph.all_nodes().begin(), stack);
     UnidirectedGraph<T> co_tree = graph - support_tree;
 
     for(const auto& edge : co_tree.all_edges()) {
