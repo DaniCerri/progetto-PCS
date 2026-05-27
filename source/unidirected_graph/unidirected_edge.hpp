@@ -1,10 +1,13 @@
 #pragma once
 #include <iostream>
+#include <vector>
+#include "component.hpp"
 
 template <typename T>
 class UnidirectedEdge {
     T source;
     T destination;
+    std::vector<Component> components;
 
 public:
     // costruttore di default
@@ -32,5 +35,17 @@ public:
     // operator<<
     friend std::ostream& operator<<(std::ostream& os, const UnidirectedEdge& e) {
         return os << "(" << e.source << ", " << e.destination << ")";
+    }
+
+    void add_component(const Component& c) {
+        components.push_back(c);
+    }
+
+    void add_components(const std::vector<Component>& components_to_add) {
+        components.insert(components.end(), components_to_add.begin(), components_to_add.end());
+    }
+
+    const std::vector<Component>& get_components() const {
+        return components;
     }
 };
