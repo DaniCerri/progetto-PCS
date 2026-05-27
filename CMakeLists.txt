@@ -24,6 +24,10 @@ target_include_directories(Eseguibile PRIVATE
     source
     source/parser
     source/unidirected_graph
+    source/algos
+    source/algos/cycles
+    source/algos/visit
+
 )
 
 # Collega Eigen3 all'eseguibile
