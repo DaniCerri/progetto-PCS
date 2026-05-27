@@ -1,4 +1,3 @@
-#pragma once
 #include "parser.hpp"
 #include <fstream>
 #include <sstream>
@@ -28,9 +27,7 @@ std::string Parser::read_file(const std::string& file_path) {
     return buffer.str();
 }
 
-void Parser::parse_file(const std::string& data, const std::string& del) {
-    UnidirectedGraph<int> graph_out;
-
+void Parser::parse_file(const std::string& data, UnidirectedGraph<int>& graph_out, const std::string& del) {
     // Dividiamo la stringa in righe
     // std::vector<std::string> rows;  // vettore che contiene le righe
     std::stringstream ss(data);  // Stream con il contenuto del file
@@ -56,19 +53,29 @@ void Parser::parse_file(const std::string& data, const std::string& del) {
             throw std::runtime_error("Riga malformata: " + row);
         }
 
-        // Costruiamo il Componente con il primo elemento (nome) e il secondo (valore)
-        Component comp(tokens[0], std::stod(tokens[1]));
-
         // Prendiamo i restanti 2 elementi come nodo1, nodo2
         int n1 = std::stoi(tokens[2]);
         int n2 = std::stoi(tokens[3]);
 
-        // Aggiungiamo l'edge al grafo TODO: aggiungere anche il componente
-        graph_out.add_edge(n1, n2);
+        // Costruiamo il componente: nome, valore, e nodo positivo (= primo nodo letto)
+        // Il segno del generatore nel termine noto verra' gestito a valle dal solver,
+        // confrontando positive_node con il verso di percorrenza della maglia.
+        Component comp(tokens[0], std::stod(tokens[1]), n1);
+
+        // Aggiungiamo l'edge al grafo
+        graph_out.add_edge(n1, n2, comp);
     }
 }
 
 void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) {
-    std::cout << "Inizio la pipeline" << std::endl;    
+    std::cout << "Inizio la pipeline" << std::endl;  
+    
+    std::string file_data = read_file(file_path);
+    std::cout << "File letto" << std::endl; 
+    
+    std::cout << "Inizio parsing" << std::endl; 
+
+    parse_file(file_data, graph_out, " ");
+    std::cout << "File parsato" << std::endl; 
 }
 
