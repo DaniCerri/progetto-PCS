@@ -2,6 +2,7 @@
 #include "unidirected_graph/unidirected_graph.hpp"
 #include <iostream>
 #include <fstream>
+#include "cycles/dfs_based.hpp"
 
 void salva_dot(const std::string& nome_file, const UnidirectedGraph<int>& circuito) {
     std::ofstream file(nome_file);
@@ -41,4 +42,15 @@ int main (const int argc, char* argv[]) {
     }
     tikz_out += ".tikz.dot";
     salva_tikz_dot(tikz_out, circuito);
+
+    // calcolo i ciclo fondamentali
+    std::vector<std::list<int>> essential_cycles;
+    find_essential_cycles_dfs(circuito, essential_cycles);
+
+    for(const auto& cycle : essential_cycles) {
+        for(const auto& node : cycle) {
+            std::cout << node << " ";
+        }
+        std::cout << std::endl;
+    } 
 }
