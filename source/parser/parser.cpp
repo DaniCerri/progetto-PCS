@@ -70,6 +70,5 @@ void Parser::parse_file(const std::string& data, const std::string& del) {
 
 void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) {
     std::cout << "Inizio la pipeline" << std::endl;    
-    
 }
 
