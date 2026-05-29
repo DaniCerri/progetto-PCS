@@ -15,3 +15,10 @@ DA FARE: modificare gli "edges" affinché faccia distinzione se entrata positiva
 
 Per ora stiamo importando (quasi) ciecamente dalle esercitazioni passate. Ci sarà una fase in cui tagliamo il non necessario.
 
+Per risolvere usiamo direttamente il file del gradiente coniugato svolto nell'esercitazione 10
+
+# Cose che non piacciono
+
+Non mi piace il modo in cui dobbiamo calcolare le varie matrici perchè secondo me si può fare decisamente di meglio. 
+Abbiamo una marea di for uno dentro l'altro.
+Sarebbe molto meglio usare roba anche direttamente nella costruzione dei cicli?
