@@ -3,7 +3,10 @@
 #include <iostream>
 #include <fstream>
 #include "cycles/dfs_based.hpp"
+#include "solver/build_matrix.hpp"
 #include <Eigen/Dense>
+#include "solver/gradiente_coniugato.hpp"
+#include "solver/calc_voltage.hpp"
 
 void salva_dot(const std::string& nome_file, const UnidirectedGraph<int>& circuito) {
     std::ofstream file(nome_file);
@@ -26,16 +29,10 @@ int main (const int argc, char* argv[]) {
 
     Parser parser;
     UnidirectedGraph<int> circuito;
-    
-    Eigen::MatrixXd resistance_matrix;
-    Eigen::VectorXd voltage_vector;
 
     // leggo la netlist
-    parser.pipeline(file_input, circuito, resistance_matrix);
-    
-    std::cout << "Matrice delle resistenze: " << std::endl;
-    std::cout << resistance_matrix << std::endl;
-    
+    parser.pipeline(file_input, circuito);
+
     // visualizzo il circuito
     salva_dot(file_output, circuito);
     // salvo anche la topologia-only per la pipeline CircuiTikZ.
@@ -50,19 +47,39 @@ int main (const int argc, char* argv[]) {
     tikz_out += ".tikz.dot";
     salva_tikz_dot(tikz_out, circuito);
 
-    // calcolo i ciclo fondamentali
+    // assemblo le matrici del Metodo delle Correnti di Maglia
+    Eigen::MatrixXd R;          // resistenze (m x m)
+    Eigen::MatrixXd B;          // incidenza  (m x n)
+    Eigen::VectorXd v;          // termine noto (n)
     std::vector<std::vector<UnidirectedEdge<int>>> essential_cycles;
-    find_essential_cycles_dfs(circuito, essential_cycles);
+    std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
+    build_matrices(circuito, R, B, v, essential_cycles, resistor_branches);
 
-    
     for (const auto& cycle : essential_cycles) {
         for (const auto& edge : cycle) {
-            edge.edge_to_string();
             std::cout << edge.edge_to_string() << " ";
         }
         std::cout << std::endl;
-    } 
+    }
 
+    std::cout << "Matrice delle resistenze R:\n" << R << std::endl;
+    std::cout << "Matrice di incidenza B:\n" << B << std::endl;
+    std::cout << "Termine noto v:\n" << v << std::endl;
+
+    Eigen::VectorXd i(essential_cycles.size());
+    
+    gradiente_coniugato(
+        B.transpose() * R * B,  // Matrice dei coefficienti
+        v,                      // Vettore dei termini noti
+        i,                      // Vettore incognite
+        1e-10                   // Tolleranza
+    );
+
+    std::cout << "Correnti di maglia i:\n" << i << std::endl;
+
+    // tensioni sui resistori: V = R B i
+    Eigen::VectorXd V;
+    calc_voltage(R, B, i, resistor_branches, V);
     /*
     // salvo i cicli su file per la visualizzazione (un ciclo per riga,
     // nodi separati da spazio)
