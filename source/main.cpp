@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include "cycles/dfs_based.hpp"
+#include <Eigen/Dense>
 
 void salva_dot(const std::string& nome_file, const UnidirectedGraph<int>& circuito) {
     std::ofstream file(nome_file);
@@ -25,10 +26,16 @@ int main (const int argc, char* argv[]) {
 
     Parser parser;
     UnidirectedGraph<int> circuito;
+    
+    Eigen::MatrixXd resistance_matrix;
+    Eigen::VectorXd voltage_vector;
 
     // leggo la netlist
-    parser.pipeline(file_input, circuito);
-
+    parser.pipeline(file_input, circuito, resistance_matrix);
+    
+    std::cout << "Matrice delle resistenze: " << std::endl;
+    std::cout << resistance_matrix << std::endl;
+    
     // visualizzo il circuito
     salva_dot(file_output, circuito);
     // salvo anche la topologia-only per la pipeline CircuiTikZ.
@@ -44,9 +51,19 @@ int main (const int argc, char* argv[]) {
     salva_tikz_dot(tikz_out, circuito);
 
     // calcolo i ciclo fondamentali
-    std::vector<std::list<int>> essential_cycles;
+    std::vector<std::vector<UnidirectedEdge<int>>> essential_cycles;
     find_essential_cycles_dfs(circuito, essential_cycles);
 
+    
+    for (const auto& cycle : essential_cycles) {
+        for (const auto& edge : cycle) {
+            edge.edge_to_string();
+            std::cout << edge.edge_to_string() << " ";
+        }
+        std::cout << std::endl;
+    } 
+
+    /*
     // salvo i cicli su file per la visualizzazione (un ciclo per riga,
     // nodi separati da spazio)
     std::string cycles_out = file_output;
@@ -63,5 +80,5 @@ int main (const int argc, char* argv[]) {
         }
         cycles_file << "\n";
         std::cout << std::endl;
-    }
+    } */
 }
