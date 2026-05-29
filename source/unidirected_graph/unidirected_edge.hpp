@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <string>
 #include <vector>
 #include "component.hpp"
 
@@ -47,5 +48,14 @@ public:
 
     const std::vector<Component>& get_components() const {
         return components;
+    }
+
+    std::string edge_to_string() const {
+        std::string res = "(" + std::to_string(source) + ", " + std::to_string(destination) + ") {";
+        for (const auto& c : components) {
+            res += " " + c.get_name();
+        }
+        res += " }";
+        return res;
     }
 };
