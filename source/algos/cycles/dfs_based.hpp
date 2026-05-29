@@ -4,44 +4,63 @@
 #include "../visit/stack.hpp"
 #include <vector>
 #include <list>
-#include <set>
 
-// NB: i nodi si contano a partire da 1, non da 0, quindi il conto va da 1 a N nodi
-
+// Manteniamo esattamente la firma e la logica dell'Algoritmo 1 del PoliTo
 template<typename T>
-bool find_path(const UnidirectedGraph<T>& graph, const T& start, const T& end, std::list<T>& path, std::vector<bool>& visited) {
-    path.push_back(start);
-    visited[start] = true;
-    if (start == end) return true;
+bool find_path(const UnidirectedGraph<T>& graph, const T& u, const T& v, 
+               std::vector<UnidirectedEdge<T>>& path, std::vector<bool>& visited) {
     
-    for(const auto& neighbor : graph.neighbours(start)) {
+    visited[u] = true;
+    
+    if (u == v) return true;
+    
+    // Sfruttiamo il nuovo metodo incident_edges che interroga solo i rami adiacenti
+    for (const auto& edge : graph.incident_edges(u)) {
+        
+        // CORREZIONE BUG: Determina chi è il vicino in un grafo non orientato
+        T neighbor = (edge.from() == u) ? edge.to() : edge.from();
+        
         if (!visited[neighbor]) {
-            if(find_path(graph, neighbor, end, path, visited)) return true;
+            // Salva l'arco (con le sue resistenze/componenti interni) prima di scendere in profondità
+            path.push_back(edge); 
+            
+            if (find_path(graph, neighbor, v, path, visited)) {
+                return true;
+            }
+            
+            // Backtracking: rimuovi l'arco se questo ramo non porta a 'v'
+            path.pop_back(); 
         }
     }
-    path.pop_back();
+    
     return false;
-}    
-
+}  
 
 template<typename T>
-void find_essential_cycles_dfs(UnidirectedGraph<T>& graph, std::vector<std::list<T>>& essential_cycles) {
+void find_essential_cycles_dfs(UnidirectedGraph<T>& graph, std::vector<std::vector<UnidirectedEdge<T>>>& essential_cycles) {
     Stack<T> stack;
     UnidirectedGraph<T> support_tree = graph_visit(graph, *graph.all_nodes().begin(), stack);
     UnidirectedGraph<T> co_tree = graph - support_tree;
 
-    for(const auto& edge : co_tree.all_edges()) {
-        std::list<T> path;
-        // Inizializza a dimensione (N + 1) per gestire gli indici da 1 a N
-        std::vector<bool> visited(graph.all_nodes().size() + 1, false);
+    const size_t num_nodes = graph.all_nodes().size();
+    
+    std::vector<UnidirectedEdge<T>> path_buffer;
+    path_buffer.reserve(num_nodes); 
+    std::vector<bool> visited(num_nodes + 1, false);
+
+    for (const auto& edge : co_tree.all_edges()) {
+        path_buffer.clear();
+        visited.assign(num_nodes + 1, false); 
         
-        // Se troviamo il percorso nell'albero di supporto (in teoria esiste sempre)
-        if (find_path(support_tree, edge.from(), edge.to(), path, visited)) {
-            // Chiudi il ciclo aggiungendo il nodo di partenza alla fine
-            path.push_back(edge.from()); 
+        // Cerchiamo il cammino nell'albero di supporto tra i due estremi dell'arco del co-albero
+        if (find_path(support_tree, edge.from(), edge.to(), path_buffer, visited)) {
             
-            // Salva il ciclo fondamentale nella collezione
-            essential_cycles.push_back(path); 
+            // L'arco del co-albero (edge) chiude l'anello.
+            // Contiene già i nodi e i relativi componenti interni
+            path_buffer.push_back(edge); 
+            
+            // Salva il ciclo fondamentale composto da archi
+            essential_cycles.push_back(path_buffer); 
         }
     }
-};
+}
