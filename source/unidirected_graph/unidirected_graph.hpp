@@ -68,6 +68,18 @@ public:
         return result;
     }
 
+    // restituisce gli archi incidenti a un nodo
+    std::vector<UnidirectedEdge<T>> incident_edges(const T& node) const {
+        std::vector<UnidirectedEdge<T>> result;
+
+        for (const auto& e : edges) {
+            if ((e.from() == node || e.to() == node) && e.from() != e.to()) {
+                result.push_back(e);
+            }
+        }
+        return result;
+    }
+
     // restituisce tutti gli archi unici
     std::set<UnidirectedEdge<T>> all_edges() const {
         return std::set<UnidirectedEdge<T>>(edges.begin(), edges.end());
