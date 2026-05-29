@@ -27,6 +27,7 @@ target_include_directories(Eseguibile PRIVATE
     source/algos
     source/algos/cycles
     source/algos/visit
+    source/algos/solver
 
 )
 
