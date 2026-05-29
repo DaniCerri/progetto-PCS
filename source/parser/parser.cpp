@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include "unidirected_graph.hpp"
-#include <Eigen/Dense>
 
 // Metodo per leggere un file dato un percorso e ritornarlo come stringa
 std::string Parser::read_file(const std::string& file_path) {
@@ -28,14 +27,10 @@ std::string Parser::read_file(const std::string& file_path) {
 }
 
 void Parser::parse_file(
-    const std::string& data, 
-    UnidirectedGraph<int>& graph_out, 
-    Eigen::MatrixXd& resistance_matrix_out,
+    const std::string& data,
+    UnidirectedGraph<int>& graph_out,
     const std::string& del
 ) {
-    std::vector<double> resistance_vector;
-    std::vector<double> voltage_vector;
-
     // Dividiamo la stringa in righe
     std::stringstream ss(data);  // Stream con il contenuto del file
     std::string row;  // riga temporanea
@@ -69,28 +64,20 @@ void Parser::parse_file(
         // confrontando positive_node con il verso di percorrenza della maglia.
         Component comp(tokens[0], std::stod(tokens[1]), n1);
 
-        // TODO: direttamente qua possiamo fare la matrice diagonale con le resistenze man mano che le becchiamo
-        if (comp.is_resistor()) {
-            resistance_vector.push_back(comp.get_value());
-        }
-
         // Aggiungiamo l'edge al grafo
         graph_out.add_edge(n1, n2, comp);
     }
-
-    // Ora facciamo i vettori e matrici di Eigen
-    resistance_matrix_out = Eigen::Map<Eigen::VectorXd>(resistance_vector.data(), resistance_vector.size()).asDiagonal();
 }
 
-void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out, Eigen::MatrixXd& resistance_matrix_out) {
-    std::cout << "Inizio la pipeline" << std::endl;  
-    
-    std::string file_data = read_file(file_path);
-    std::cout << "File letto" << std::endl; 
-    
-    std::cout << "Inizio parsing" << std::endl; 
+void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) {
+    std::cout << "Inizio la pipeline" << std::endl;
 
-    parse_file(file_data, graph_out, resistance_matrix_out, " ");
-    std::cout << "File parsato" << std::endl; 
+    std::string file_data = read_file(file_path);
+    std::cout << "File letto" << std::endl;
+
+    std::cout << "Inizio parsing" << std::endl;
+
+    parse_file(file_data, graph_out, " ");
+    std::cout << "File parsato" << std::endl;
 }
 
