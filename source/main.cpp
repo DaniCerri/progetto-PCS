@@ -19,13 +19,30 @@ void salva_tikz_dot(const std::string& nome_file, const UnidirectedGraph<int>& c
 }
 
 int main (const int argc, char* argv[]) {
-    if (argc != 3) {
-        std::cerr << "Utilizzo: " << argv[0] << " <file_input> <file_output>" << std::endl;
+    if (argc != 2 && argc != 3) {
+        std::cerr << "Utilizzo: " << argv[0] << " <file_input> [file_output]" << std::endl;
         return 1;
     }
 
     std::string file_input = argv[1];
-    std::string file_output = argv[2];
+    std::string file_output;
+    if (argc == 3) {
+        file_output = argv[2];
+    } else {
+        // output di default: cartella ../out, stesso nome dell'input ma .dot
+        // al posto di .txt (se non finisce in .txt, si appende .dot)
+        std::string base = file_input;
+        // tolgo l'eventuale percorso, tengo solo il nome del file
+        const size_t slash = base.find_last_of("/\\");
+        if (slash != std::string::npos) base = base.substr(slash + 1);
+        // tolgo l'estensione .txt
+        const std::string txt = ".txt";
+        if (base.size() >= txt.size() &&
+            base.compare(base.size() - txt.size(), txt.size(), txt) == 0) {
+            base.resize(base.size() - txt.size());
+        }
+        file_output = "../out/" + base + ".dot";
+    }
 
     Parser parser;
     UnidirectedGraph<int> circuito;
@@ -80,9 +97,9 @@ int main (const int argc, char* argv[]) {
     // tensioni sui resistori: V = R B i
     Eigen::VectorXd V;
     calc_voltage(R, B, i, resistor_branches, V);
-    /*
     // salvo i cicli su file per la visualizzazione (un ciclo per riga,
-    // nodi separati da spazio)
+    // nodi separati da spazio). I cicli sono liste di archi: li percorro
+    // ricostruendo la sequenza dei nodi nel verso di percorrenza.
     std::string cycles_out = file_output;
     if (cycles_out.size() >= ext.size() &&
         cycles_out.compare(cycles_out.size() - ext.size(), ext.size(), ext) == 0) {
@@ -91,11 +108,20 @@ int main (const int argc, char* argv[]) {
     cycles_out += ".cycles.txt";
     std::ofstream cycles_file(cycles_out);
     for (const auto& cycle : essential_cycles) {
-        for (const auto& node : cycle) {
-            cycles_file << node << " ";
-            std::cout << node << " ";
+        if (cycle.empty()) continue;
+        // nodo di partenza: estremo del primo arco condiviso con l'ultimo
+        const auto& first = cycle.front();
+        const auto& last  = cycle.back();
+        int cur = (first.from() == last.from() || first.from() == last.to())
+                      ? first.from() : first.to();
+        cycles_file << cur << " ";
+        std::cout << cur << " ";
+        for (const auto& edge : cycle) {
+            cur = (edge.from() == cur) ? edge.to() : edge.from();
+            cycles_file << cur << " ";
+            std::cout << cur << " ";
         }
         cycles_file << "\n";
         std::cout << std::endl;
-    } */
+    }
 }
