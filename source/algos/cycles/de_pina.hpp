@@ -60,7 +60,7 @@ std::vector<std::vector<bool>> De_Pina(UnidirectedGraph<T>& graph, std::vector<s
     for (int i = 0; i < k; ++i) {
         // Troviamo il Ciclo Minimo (lifting + dijkstra)
         C[i] = find_minimal_cycle(graph, S[i]);
-        // TODO: aggiorniamo i vettori S successivi
+        // Aggiorniamo i vettori S successivi
         for (int j = i + 1; j < k; ++j) {
             int scalar_product = 0;
             for (int x = 0; x < C[i].size(); ++x) { // Applichiamo il prodotto scalare tra C[i] e S[j] per verificare se fa 1
@@ -69,7 +69,7 @@ std::vector<std::vector<bool>> De_Pina(UnidirectedGraph<T>& graph, std::vector<s
             scalar_product %= 2; // Applichiamo l'operazione modulo 2
             if (scalar_product == 1) {
                 for (int x = 0; x < C[i].size(); ++x) {
-                    S[j][x] = S[j][x] ^ C[i][x]; // Applichiamo la differenza simmetrica XOR tra S[j] e S[i] per aggiornare S[j]
+                    S[j][x] = S[j][x] ^ S[i][x]; // Applichiamo la differenza simmetrica XOR tra S[j] e S[i] per aggiornare S[j]
                 }
             }
         }
@@ -107,7 +107,7 @@ void find_essential_cycles_DePina(UnidirectedGraph<T>& graph, std::vector<std::v
     // Applichiamo l'algoritmo di De Pina per trovare gli archi essenziali
     std::vector<std::vector<bool>> C = De_Pina(graph, S);
 
-    // TODO: Tradurre i vettori di incidenza C in cicli reali
+    // Traduciamo i vettori di incidenza C in cicli reali
     for (const auto& incidence_vector : C) {
         std::vector<UnidirectedEdge<T>> path_buffer; // Buffer per memorizzare gli archi del ciclo trovato
         for (int j = 0; j < incidence_vector.size(); ++j) {
