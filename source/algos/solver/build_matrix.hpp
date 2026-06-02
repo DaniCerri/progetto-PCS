@@ -1,9 +1,13 @@
 #pragma once
 #include "unidirected_graph/unidirected_graph.hpp"
 #include "cycles/dfs_based.hpp"
+#include "cycles/de_pina.hpp"
 #include <Eigen/Dense>
 #include <vector>
 #include <map>
+
+// L'enum è globale e visibile anche dal main.cpp
+enum class CycleType { DFS, DePina };
 
 // Assembla le matrici del Metodo delle Correnti di Maglia:
 //   R  (m x m) diagonale delle resistenze
@@ -23,11 +27,16 @@ void build_matrices(
     Eigen::MatrixXd& incidence_matrix_out,    // B
     Eigen::VectorXd& voltage_vector_out,      // v
     std::vector<std::vector<UnidirectedEdge<T>>>& fundamental_cycles_out,
-    std::vector<UnidirectedEdge<T>>& resistor_branches_out)  // riga i -> arco resistore
+    std::vector<UnidirectedEdge<T>>& resistor_branches_out,// riga i -> arco resistore
+    CycleType method = CycleType::DFS)  
 {
-    // 1. cicli fondamentali (archi normalizzati from<to)
-    // TODO: generalizzare per De Pina
-    find_essential_cycles_dfs(graph, fundamental_cycles_out);
+
+    // 1. Cicli fondamentali (archi normalizzati from<to)
+    if (method == CycleType::DFS) {
+        find_essential_cycles_dfs(graph, fundamental_cycles_out);
+    } else {
+        find_essential_cycles_DePina(graph, fundamental_cycles_out);
+    }
     const size_t n = fundamental_cycles_out.size();
 
     // 2. numerazione resistori: rami con almeno un resistore, ordine lessicografico

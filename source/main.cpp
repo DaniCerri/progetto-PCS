@@ -19,14 +19,26 @@ void salva_tikz_dot(const std::string& nome_file, const UnidirectedGraph<int>& c
 }
 
 int main (const int argc, char* argv[]) {
-    if (argc != 2 && argc != 3) {
-        std::cerr << "Utilizzo: " << argv[0] << " <file_input> [file_output]" << std::endl;
+    if (argc < 2 || argc > 4) {
+        std::cerr << "Utilizzo: " << argv[0] << " <file_input> [file_output] [dfs/depina]" << std::endl;
         return 1;
     }
 
     std::string file_input = argv[1];
     std::string file_output;
-    if (argc == 3) {
+    CycleType method = CycleType::DFS;
+    if (argc > 2) {
+        std::string chosen_method = argv[argc-1];
+        if (chosen_method == "dfs") {
+            method = CycleType::DFS;
+        } else if (chosen_method == "depina") {
+            method = CycleType::DePina;
+        } else {
+            std::cerr << "Metodo non valido. Scegliere tra 'dfs' e 'depina'." << std::endl;
+            return 1;
+        }
+    }
+    if (argc > 3) {
         file_output = argv[2];
     } else {
         // output di default: cartella ../out, stesso nome dell'input ma .dot
@@ -70,7 +82,7 @@ int main (const int argc, char* argv[]) {
     Eigen::VectorXd v;          // termine noto (n)
     std::vector<std::vector<UnidirectedEdge<int>>> essential_cycles;
     std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
-    build_matrices(circuito, R, B, v, essential_cycles, resistor_branches);
+    build_matrices(circuito, R, B, v, essential_cycles, resistor_branches, method);
 
     for (const auto& cycle : essential_cycles) {
         for (const auto& edge : cycle) {
