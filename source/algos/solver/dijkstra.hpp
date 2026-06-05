@@ -1,6 +1,8 @@
 # pragma once
 # include <map>
 # include <set>
+# include <vector>
+# include <algorithm>
 # include <limits>
 # include <utility>
 # include "../../unidirected_graph/unidirected_graph.hpp"
@@ -44,29 +46,30 @@ std::pair<std::map<T, int>, std::map<T, T>> dijkstra(const UnidirectedGraph<T>& 
 
 
 
-// Scriviamo una funzione che costruisce un vettore di incidenza per ogni ciclo trovato con dijkstra tra nodo 1 a nodo2, in modo da poter applicare l'algoritmo di De Pina per trovare i cicli essenziali in un grafo non orientato.
+// Estrae la sequenza ORDINATA dei nodi del grafo originale seguendo la catena
+// pred del cammino minimo nel grafo sollevato (start = v+, end = v-).
+// I nodi sollevati (T,bool) si proiettano sulla prima componente: e' esattamente
+// il verso di percorrenza del ciclo minimo. start ed end proiettano sullo stesso
+// nodo base v, quindi si rimuove il duplicato di chiusura finale.
+// Cosi' De Pina espone i cicli gia' come cammino ordinato, senza riordini a valle.
 template <typename T>
-std::vector<bool> find_incidence_vector(const UnidirectedGraph<T>& graph, const std::map<std::pair<T,bool>, std::pair<T,bool>>& pred, std::pair<T,bool> start_node, std::pair<T,bool> end_node) {
-    // Creiamo un vettore di incidenza inizializzato a false
-    auto s = graph.all_edges();
-    std::vector<UnidirectedEdge<T>> edge_list(s.begin(), s.end());
-    std::vector<bool> incidence_vector(graph.all_edges().size(), false);
-
+std::vector<T> extract_cycle_nodes(
+    const std::map<std::pair<T,bool>, std::pair<T,bool>>& pred,
+    std::pair<T,bool> start_node,
+    std::pair<T,bool> end_node)
+{
+    std::vector<T> nodes;
     auto current = end_node;
-
-    while (current != start_node) {
-        if (pred.find(current) == pred.end()) break; // Se non troviamo un predecessore, usciamo dal ciclo
-        std::pair<T,bool> parent = pred.at(current);
-
-        // Troviamo l'indice dell'arco (parent, node) o (node, parent) nel grafo originale
-        for (int i = 0; i < edge_list.size(); ++i) {
-            auto edge = edge_list[i];
-            if ((edge.from() == current.first && edge.to() == parent.first) || (edge.from() == parent.first && edge.to() == current.first)) {
-                incidence_vector[i] = !incidence_vector[i]; // Incrementiamo mod 2 l'incidenza dell'arco trovato
-                break;
-            }
-        }
-        current = parent; // Saltiamo al nodo padre
+    while (true) {
+        nodes.push_back(current.first);
+        if (current == start_node) break;
+        auto it = pred.find(current);
+        if (it == pred.end()) break;   // difensivo: catena interrotta
+        current = it->second;
     }
-    return incidence_vector;
+    std::reverse(nodes.begin(), nodes.end());
+    // start ed end proiettano sullo stesso nodo base -> tolgo il doppione di chiusura
+    if (nodes.size() >= 2 && nodes.front() == nodes.back())
+        nodes.pop_back();
+    return nodes;
 }

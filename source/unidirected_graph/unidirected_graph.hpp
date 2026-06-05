@@ -5,15 +5,21 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <map>
 #include <stdexcept>
 #include "unidirected_edge.hpp"
 
 template <typename T>
 class UnidirectedGraph {
-    // archi
+    // archi (sorgente di verita': ordine di inserimento, serve a all_edges() lex)
     std::vector<UnidirectedEdge<T>> edges;
     // nodi unici
     std::set<T> vertices;
+    // lista di adiacenza: nodo -> indici degli archi incidenti in `edges`.
+    // Rende vicinato/incidenza O(deg) invece di O(m) (scansione di tutti gli archi),
+    // e il controllo duplicati in add_edge O(deg). Mantenuta in sincrono da add_edge;
+    // operator- e graph_visit ricostruiscono il grafo via add_edge -> adj coerente.
+    std::map<T, std::vector<size_t>> adj;
 
 public:
     // costruttore di default
@@ -37,20 +43,31 @@ public:
     }
 
     void add_edge(const UnidirectedEdge<T>& e) {
-        for (auto& x : edges)
-            if (x == e)
-                throw std::runtime_error(
-                    "add_edge: arco duplicato - un solo componente per arco "
-                    "(usa nodi intermedi per rami paralleli/serie)");
+        // controllo duplicati solo tra gli archi incidenti a un estremo (O(deg))
+        auto it = adj.find(e.from());
+        if (it != adj.end())
+            for (size_t idx : it->second)
+                if (edges[idx] == e)
+                    throw std::runtime_error(
+                        "add_edge: arco duplicato - un solo componente per arco "
+                        "(usa nodi intermedi per rami paralleli/serie)");
+
+        const size_t idx = edges.size();
         edges.push_back(e);
         vertices.insert(e.from());
         vertices.insert(e.to());
+        adj[e.from()].push_back(idx);
+        if (e.to() != e.from())
+            adj[e.to()].push_back(idx);
     }
 
-    // restituisce i vicini di un nodo
+    // restituisce i vicini di un nodo (O(deg) tramite lista di adiacenza)
     std::list<T> neighbours(const T& node) const {
         std::list<T> result;
-        for (const auto& e : edges) {
+        auto it = adj.find(node);
+        if (it == adj.end()) return result;
+        for (size_t idx : it->second) {
+            const auto& e = edges[idx];
             if (e.from() == node && e.to() != node)
                 result.push_back(e.to());
             else if (e.to() == node && e.from() != node)
@@ -59,14 +76,15 @@ public:
         return result;
     }
 
-    // restituisce gli archi incidenti a un nodo
+    // restituisce gli archi incidenti a un nodo (O(deg) tramite lista di adiacenza)
     std::vector<UnidirectedEdge<T>> incident_edges(const T& node) const {
         std::vector<UnidirectedEdge<T>> result;
-
-        for (const auto& e : edges) {
-            if ((e.from() == node || e.to() == node) && e.from() != e.to()) {
+        auto it = adj.find(node);
+        if (it == adj.end()) return result;
+        for (size_t idx : it->second) {
+            const auto& e = edges[idx];
+            if (e.from() != e.to())
                 result.push_back(e);
-            }
         }
         return result;
     }

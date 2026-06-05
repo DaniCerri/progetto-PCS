@@ -80,13 +80,13 @@ int main (const int argc, char* argv[]) {
     Eigen::MatrixXd R;          // resistenze (m x m)
     Eigen::MatrixXd B;          // incidenza  (m x n)
     Eigen::VectorXd v;          // termine noto (n)
-    std::vector<std::vector<UnidirectedEdge<int>>> essential_cycles;
+    std::vector<std::vector<int>> essential_cycles;        // maglie = sequenze di nodi
     std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
     build_matrices(circuito, R, B, v, essential_cycles, resistor_branches, method);
 
     for (const auto& cycle : essential_cycles) {
-        for (const auto& edge : cycle) {
-            std::cout << edge.edge_to_string() << " ";
+        for (int node : cycle) {
+            std::cout << node << " ";
         }
         std::cout << std::endl;
     }
@@ -118,29 +118,13 @@ int main (const int argc, char* argv[]) {
         cycles_out.resize(cycles_out.size() - ext.size());
     }
     cycles_out += ".cycles.txt";
+    // I cicli sono gia' sequenze ordinate di nodi nel verso di percorrenza, senza
+    // duplicato di chiusura (la maglia si chiude in wrap-around). Le scrivo cosi'
+    // come sono: il visualizzatore chiude la maglia col wrap-around.
     std::ofstream cycles_file(cycles_out);
     for (const auto& cycle : essential_cycles) {
         if (cycle.empty()) continue;
-        // nodo di partenza: estremo del primo arco condiviso con l'ultimo
-        const auto& first = cycle.front();
-        const auto& last  = cycle.back();
-        int cur = (first.from() == last.from() || first.from() == last.to())
-                      ? first.from() : first.to();
-        // ricostruisco la sequenza dei nodi nel verso di percorrenza
-        std::vector<int> seq;
-        seq.push_back(cur);
-        for (const auto& edge : cycle) {
-            cur = (edge.from() == cur) ? edge.to() : edge.from();
-            seq.push_back(cur);
-        }
-        // l'ultimo nodo coincide col primo (il ciclo si chiude): lo ometto.
-        // Il visualizzatore chiude la maglia col wrap-around; lasciare il
-        // doppione genererebbe un arco degenere e, nel layout bus-bar,
-        // saltava il tratto lungo il rail quando il rail e' a inizio/fine
-        // sequenza (freccia mancante).
-        if (seq.size() >= 2 && seq.front() == seq.back())
-            seq.pop_back();
-        for (int node : seq) {
+        for (int node : cycle) {
             cycles_file << node << " ";
             std::cout << node << " ";
         }

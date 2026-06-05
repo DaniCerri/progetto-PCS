@@ -9,6 +9,9 @@ class Component {
     int positive_node;
 
     public:
+        // default: componente "vuoto", usato solo per archi-chiave costruiti per
+        // il lookup (UnidirectedEdge(a,b)) in cui il componente non viene mai letto
+        Component() : name(""), value(0.0), positive_node(0) {}
         Component(const std::string& name_, double value_, int positive_node_)
             : name(name_), value(value_), positive_node(positive_node_) {}
         ~Component() = default;

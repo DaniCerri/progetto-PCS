@@ -21,18 +21,26 @@ enum class CycleType { DFS, DePina };
 // come richiesto dalla specifica). row_of lega arco -> riga in O(log m);
 // modello a singolo componente per arco: resistor_branches[i] e' l'arco stesso,
 // .get_component() il suo unico componente (resistore).
+//
+// I cicli fondamentali arrivano gia' come SEQUENZE ORDINATE di nodi (verso di
+// percorrenza), da entrambi i metodi (DFS e De Pina). Questo rende il segno di B
+// una pura applicazione della regola PDF: l'arco ha verso di riferimento fisso
+// nodo-minore->nodo-maggiore, quindi se la maglia percorre l'arco a->b il segno e'
+// +1 quando a<b (verso concorde), -1 quando a>b. Niente piu' euristica del nodo
+// di partenza ne' ricamminata degli archi (che era fragile e, su cicli >=4 archi
+// non ordinati come quelli di De Pina, produceva segni incoerenti).
 template<typename T>
 void build_matrices(
     UnidirectedGraph<T>& graph,
     Eigen::MatrixXd& resistance_matrix_out,   // R
     Eigen::MatrixXd& incidence_matrix_out,    // B
     Eigen::VectorXd& voltage_vector_out,      // v
-    std::vector<std::vector<UnidirectedEdge<T>>>& fundamental_cycles_out,
+    std::vector<std::vector<T>>& fundamental_cycles_out,   // maglie = sequenze di nodi
     std::vector<UnidirectedEdge<T>>& resistor_branches_out,// riga i -> arco resistore
-    CycleType method = CycleType::DFS)  
+    CycleType method = CycleType::DFS)
 {
 
-    // 1. Cicli fondamentali (archi normalizzati from<to)
+    // 1. Cicli fondamentali come sequenze ordinate di nodi
     if (method == CycleType::DFS) {
         find_essential_cycles_dfs(graph, fundamental_cycles_out);
     } else {
@@ -40,11 +48,14 @@ void build_matrices(
     }
     const size_t n = fundamental_cycles_out.size();
 
-    // 2. numerazione resistori: archi il cui componente e' un resistore, ordine lessicografico
+    // 2. archi in ordine lessicografico (std::set gia' ordinato per (from,to)):
+    //    definisce la numerazione delle righe; i resistori prendono le righe di B/R.
+    //    edge_set serve anche per risalire dall'arco (a,b) al suo componente.
+    const std::set<UnidirectedEdge<T>> edge_set = graph.all_edges();
     std::vector<UnidirectedEdge<T>>& resistor_branches = resistor_branches_out;  // riga i -> arco
     resistor_branches.clear();
-    std::map<UnidirectedEdge<T>, size_t> row_of;         // arco  -> riga
-    for (const auto& e : graph.all_edges()) {
+    std::map<UnidirectedEdge<T>, size_t> row_of;         // arco resistore -> riga
+    for (const auto& e : edge_set) {
         if (e.get_component().is_resistor()) {
             row_of[e] = resistor_branches.size();
             resistor_branches.push_back(e);
@@ -58,33 +69,32 @@ void build_matrices(
         resistance_matrix_out(i, i) = resistor_branches[i].get_component().get_value();
     }
 
-    // 4. B e v percorrendo ogni ciclo nel suo verso
+    // 4. B e v percorrendo ogni maglia secondo l'ordine dei suoi nodi
     incidence_matrix_out = Eigen::MatrixXd::Zero(m, n);
     voltage_vector_out   = Eigen::VectorXd::Zero(n);
 
     for (size_t j = 0; j < n; ++j) {
-        const auto& cycle = fundamental_cycles_out[j];
+        const std::vector<T>& nodes = fundamental_cycles_out[j];
+        const size_t k = nodes.size();
 
-        // nodo di partenza: estremo di cycle[0] condiviso con l'ultimo arco
-        const auto& first = cycle.front();
-        const auto& last  = cycle.back();
-        T cur = (first.from() == last.from() || first.from() == last.to())
-                    ? first.from() : first.to();
+        for (size_t pos = 0; pos < k; ++pos) {
+            const T a = nodes[pos];
+            const T b = nodes[(pos + 1) % k];          // wrap-around chiude la maglia
+            const int dir = (a < b) ? +1 : -1;         // verso maglia vs verso arco (regola PDF)
+            const UnidirectedEdge<T> key(a, b);        // costruttore normalizza from<to
 
-        for (const auto& e : cycle) {
-            const int dir = (e.from() == cur) ? +1 : -1;          // +1 se percorso from->to
-            const T   nxt = (e.from() == cur) ? e.to() : e.from();
-            const Component& c = e.get_component();
+            auto it = edge_set.find(key);
+            if (it == edge_set.end()) continue;        // difensivo: arco inesistente
+            const Component& c = it->get_component();
             if (c.is_resistor()) {
                 // riga del resistore: dir e' il segno in B
-                incidence_matrix_out(row_of.at(e), j) += dir;
+                incidence_matrix_out(row_of.at(key), j) += dir;
             } else {
                 // generatore: contributo + se attraversato da "-" a "+"
-                // (usciamo dall'arco nel nodo positivo)
-                const int vsign = (c.get_positive_node() == nxt) ? +1 : -1;
+                // (usciamo dall'arco nel nodo b: se b e' il positivo -> +)
+                const int vsign = (c.get_positive_node() == b) ? +1 : -1;
                 voltage_vector_out(j) += vsign * c.get_value();
             }
-            cur = nxt;
         }
     }
 }
