@@ -20,7 +20,7 @@ UnidirectedGraph<T> graph_visit(const UnidirectedGraph<T>& grafo, const T& nodo_
             for (const auto& e : grafo.incident_edges(u)) {
                 T other = (e.from() == u) ? e.to() : e.from();
                 if (other == v) {
-                    albero_risultante.add_edge(u, v, e.get_components());
+                    albero_risultante.add_edge(e);
                     break;
                 }
             }

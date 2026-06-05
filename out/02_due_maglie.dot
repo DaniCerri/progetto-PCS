@@ -1,0 +1,28 @@
+graph Circuito {
+  layout=neato;
+  splines=ortho;
+  overlap=false;
+  node [fontname="Helvetica"];
+  edge [fontname="Helvetica", penwidth=1.4, arrowhead=none];
+  // nodi del circuito
+  n1 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="1"];
+  n2 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="2"];
+  n3 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="3"];
+  n4 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="4"];
+  // componenti
+  c_V1 [shape=circle, style=filled, fillcolor=lightyellow, color=blue, fontcolor=blue, label="V1\n10V"];
+  n1 -- c_V1 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_V1 -- n2 [taillabel="-", labelfontcolor=red, labeldistance=1.5];
+  c_R1 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R1\n10Ω"];
+  n2 -- c_R1 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R1 -- n3;
+  c_R2 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R2\n20Ω"];
+  n3 -- c_R2 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R2 -- n4;
+  c_V2 [shape=circle, style=filled, fillcolor=lightyellow, color=blue, fontcolor=blue, label="V2\n5V"];
+  n4 -- c_V2 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_V2 -- n1 [taillabel="-", labelfontcolor=red, labeldistance=1.5];
+  c_R3 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R3\n15Ω"];
+  n3 -- c_R3 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R3 -- n1;
+}

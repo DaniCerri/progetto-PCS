@@ -34,6 +34,14 @@ public:
         vertices.insert(v);
     }
 
+    void add_edge(const UnidirectedEdge<T>& e) {
+        for (auto& x : edges)
+            if (x == e) return;
+        edges.push_back(e);
+        vertices.insert(e.from());
+        vertices.insert(e.to());
+    }
+
     // restituisce i vicini di un nodo
     std::list<T> neighbours(const T& node) const {
         std::list<T> result;
