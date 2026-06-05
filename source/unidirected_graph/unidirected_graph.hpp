@@ -26,31 +26,9 @@ public:
     // ma nel caso in cui si provi ad aggiungere un arco i cui nodi non sono presenti nel set, allora
     // vengono aggiunti automaticamente
     void add_edge(const T& u, const T& v, const Component& component) {
-        UnidirectedEdge<T> e(u, v);
-        // aggiungiamo i componenti al lato del grafo appena aggiunto
-        e.add_component(component);
+        UnidirectedEdge<T> e(u, v, component);
         for (auto& x : edges)
-            // TODO: migliorare controllo che il componente non sia duplicato nel ramo
-            if (x == e && x.get_components().begin()->get_name() != component.get_name()) {
-                x.add_component(component);
-                return;
-            }
-            else if (x == e) return;
-        edges.push_back(e);
-        vertices.insert(u);
-        vertices.insert(v);
-    }
-
-    void add_edge(const T& u, const T& v, const std::vector<Component>& components) {
-        UnidirectedEdge<T> e(u, v);
-        // aggiungiamo i componenti al lato del grafo appena aggiunto
-        e.add_components(components);
-        for (auto& x : edges)
-            // TODO: migliorare controllo che il componente non sia duplicato nel ramo
-            if (x == e) {
-                x.add_components(components);
-                return;
-            }
+            if (x == e) return;
         edges.push_back(e);
         vertices.insert(u);
         vertices.insert(v);
