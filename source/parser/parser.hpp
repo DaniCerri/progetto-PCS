@@ -8,7 +8,7 @@ class Parser {
         void parse_file(
             const std::string& data,
             UnidirectedGraph<int>& graph_out,
-            const std::string& del = " "
+            const std::string& del = " \t\r\f\v"
         );
 
     public:

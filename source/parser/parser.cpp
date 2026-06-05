@@ -3,6 +3,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <iostream>
 #include "unidirected_graph.hpp"
 
 // Metodo per leggere un file dato un percorso e ritornarlo come stringa
@@ -55,14 +56,23 @@ void Parser::parse_file(
             throw std::runtime_error("Riga malformata: " + row);
         }
 
-        // Prendiamo i restanti 2 elementi come nodo1, nodo2
-        int n1 = std::stoi(tokens[2]);
-        int n2 = std::stoi(tokens[3]);
+        // Convertiamo valore e nodi, intercettando input non numerico
+        // per dare un messaggio con il contesto della riga invece di
+        // lasciar propagare std::invalid_argument/out_of_range grezzi.
+        int n1, n2;
+        double val;
+        try {
+            val = std::stod(tokens[1]);
+            n1 = std::stoi(tokens[2]);
+            n2 = std::stoi(tokens[3]);
+        } catch (const std::exception&) {
+            throw std::runtime_error("Valore non numerico nella riga: " + row);
+        }
 
         // Costruiamo il componente: nome, valore, e nodo positivo (= primo nodo letto)
         // Il segno del generatore nel termine noto verra' gestito a valle dal solver,
         // confrontando positive_node con il verso di percorrenza della maglia.
-        Component comp(tokens[0], std::stod(tokens[1]), n1);
+        Component comp(tokens[0], val, n1);
 
         // Aggiungiamo l'edge al grafo
         graph_out.add_edge(n1, n2, comp);
@@ -77,7 +87,7 @@ void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) 
 
     std::cout << "Inizio parsing" << std::endl;
 
-    parse_file(file_data, graph_out, " ");
+    parse_file(file_data, graph_out, " \t\r\f\v");
     std::cout << "File parsato" << std::endl;
 }
 
