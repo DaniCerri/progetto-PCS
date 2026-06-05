@@ -13,6 +13,7 @@ find_package(Eigen3 CONFIG REQUIRED)
 # Elencare tutti i file sorgente inseriti nella cartella source
 set(SOURCES
     source/parser/parser.cpp
+    source/algos/solver/gradiente_coniugato.cpp
     source/main.cpp
 )
 
