@@ -96,8 +96,7 @@ public:
         UnidirectedGraph result;
         for (const auto& e : edges) {
             if (other.edge_number(e) == other.edges.size()) {
-                for (const auto& c : e.get_components())
-                    result.add_edge(e.from(), e.to(), c);
+                result.add_edge(e);
             }
         }
         return result;

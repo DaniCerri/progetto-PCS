@@ -44,10 +44,7 @@ void build_matrices(
     resistor_branches.clear();
     std::map<UnidirectedEdge<T>, size_t> row_of;         // arco  -> riga
     for (const auto& e : graph.all_edges()) {
-        bool has_resistor = false;
-        for (const auto& c : e.get_components())
-            if (c.is_resistor()) { has_resistor = true; break; }
-        if (has_resistor) {
+        if (e.get_component().is_resistor()) {
             row_of[e] = resistor_branches.size();
             resistor_branches.push_back(e);
         }
@@ -57,10 +54,7 @@ void build_matrices(
     // 3. R diagonale (somma dei resistori in serie sullo stesso ramo)
     resistance_matrix_out = Eigen::MatrixXd::Zero(m, m);
     for (size_t i = 0; i < m; ++i) {
-        double r = 0.0;
-        for (const auto& c : resistor_branches[i].get_components())
-            if (c.is_resistor()) r += c.get_value();
-        resistance_matrix_out(i, i) = r;
+        resistance_matrix_out(i, i) = resistor_branches[i].get_component().get_value();
     }
 
     // 4. B e v percorrendo ogni ciclo nel suo verso
@@ -79,17 +73,15 @@ void build_matrices(
         for (const auto& e : cycle) {
             const int dir = (e.from() == cur) ? +1 : -1;          // +1 se percorso from->to
             const T   nxt = (e.from() == cur) ? e.to() : e.from();
-
-            for (const auto& c : e.get_components()) {
-                if (c.is_resistor()) {
-                    // riga del resistore: dir e' il segno in B
-                    incidence_matrix_out(row_of.at(e), j) += dir;
-                } else {
-                    // generatore: contributo + se attraversato da "-" a "+"
-                    // (usciamo dall'arco nel nodo positivo)
-                    const int vsign = (c.get_positive_node() == nxt) ? +1 : -1;
-                    voltage_vector_out(j) += vsign * c.get_value();
-                }
+            const Component& c = e.get_component();
+            if (c.is_resistor()) {
+                // riga del resistore: dir e' il segno in B
+                incidence_matrix_out(row_of.at(e), j) += dir;
+            } else {
+                // generatore: contributo + se attraversato da "-" a "+"
+                // (usciamo dall'arco nel nodo positivo)
+                const int vsign = (c.get_positive_node() == nxt) ? +1 : -1;
+                voltage_vector_out(j) += vsign * c.get_value();
             }
             cur = nxt;
         }
