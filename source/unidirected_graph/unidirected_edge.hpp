@@ -8,7 +8,7 @@ template <typename T>
 class UnidirectedEdge {
     T source;
     T destination;
-    std::vector<Component> components;
+    Component components;
 
 public:
     // costruttore di default
@@ -38,23 +38,17 @@ public:
         return os << "(" << e.source << ", " << e.destination << ")";
     }
 
-    void add_component(const Component& c) {
-        components.push_back(c);
+    void set_component(const Component& c) {
+        component = c;
     }
 
-    void add_components(const std::vector<Component>& components_to_add) {
-        components.insert(components.end(), components_to_add.begin(), components_to_add.end());
-    }
-
-    const std::vector<Component>& get_components() const {
-        return components;
+    const Component& get_component() const {
+        return component;
     }
 
     std::string edge_to_string() const {
-        std::string res = "(" + std::to_string(source) + ", " + std::to_string(destination) + ") {";
-        for (const auto& c : components) {
-            res += " " + c.get_name();
-        }
+        std::string res = "(" + std::to_string(source) + ", " + std::to_string(destination) + ") { ";
+        res += component.get_name();
         res += " }";
         return res;
     }
