@@ -1,9 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
 #include <iostream>
-using namespace std;
-
-
 
 void gradiente_coniugato(
     const Eigen::MatrixXd& A,  // Matrice dei coefficienti
@@ -31,5 +28,5 @@ void gradiente_coniugato(
         k++;
     }
 
-    cout << "Numero di iterazioni: " << k << endl; 
+    std::cout << "Numero di iterazioni: " << k << std::endl;
 }

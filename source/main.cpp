@@ -1,5 +1,6 @@
 #include "parser/parser.hpp"
 #include "unidirected_graph/unidirected_graph.hpp"
+#include "unidirected_graph/dot_serializer.hpp"
 #include <iostream>
 #include <fstream>
 #include "cycles/dfs_based.hpp"
@@ -10,12 +11,37 @@
 
 void salva_dot(const std::string& nome_file, const UnidirectedGraph<int>& circuito) {
     std::ofstream file(nome_file);
-    circuito.to_dot(file, "Circuito");
+    to_dot(circuito, file, "Circuito");
 }
 
 void salva_tikz_dot(const std::string& nome_file, const UnidirectedGraph<int>& circuito) {
     std::ofstream file(nome_file);
-    circuito.to_tikz_dot(file, "Circuito");
+    to_tikz_dot(circuito, file, "Circuito");
+}
+
+// Toglie il suffisso ".txt" da un percorso, se presente.
+static std::string strip_suffix(const std::string& path, const std::string& suffix) {
+    if (path.size() >= suffix.size() &&
+        path.compare(path.size() - suffix.size(), suffix.size(), suffix) == 0) {
+        return path.substr(0, path.size() - suffix.size());
+    }
+    return path;
+}
+
+// Percorso di output di default: cartella ../out, stesso nome dell'input ma con
+// estensione .dot al posto di .txt (se non finisce in .txt, si appende .dot).
+static std::string default_output_path(const std::string& file_input) {
+    std::string base = file_input;
+    // tolgo l'eventuale percorso, tengo solo il nome del file
+    const size_t slash = base.find_last_of("/\\");
+    if (slash != std::string::npos) base = base.substr(slash + 1);
+    return "../out/" + strip_suffix(base, ".txt") + ".dot";
+}
+
+// Deriva un percorso di output sostituendo l'eventuale ".dot" finale con new_ext
+// (es. ".tikz.dot", ".cycles.txt"); se non termina in ".dot", appende soltanto.
+static std::string with_extension(const std::string& dot_path, const std::string& new_ext) {
+    return strip_suffix(dot_path, ".dot") + new_ext;
 }
 
 int main (const int argc, char* argv[]) {
@@ -41,19 +67,7 @@ int main (const int argc, char* argv[]) {
     if (argc > 3) {
         file_output = argv[2];
     } else {
-        // output di default: cartella ../out, stesso nome dell'input ma .dot
-        // al posto di .txt (se non finisce in .txt, si appende .dot)
-        std::string base = file_input;
-        // tolgo l'eventuale percorso, tengo solo il nome del file
-        const size_t slash = base.find_last_of("/\\");
-        if (slash != std::string::npos) base = base.substr(slash + 1);
-        // tolgo l'estensione .txt
-        const std::string txt = ".txt";
-        if (base.size() >= txt.size() &&
-            base.compare(base.size() - txt.size(), txt.size(), txt) == 0) {
-            base.resize(base.size() - txt.size());
-        }
-        file_output = "../out/" + base + ".dot";
+        file_output = default_output_path(file_input);
     }
 
     Parser parser;
@@ -65,16 +79,7 @@ int main (const int argc, char* argv[]) {
     // visualizzo il circuito
     salva_dot(file_output, circuito);
     // salvo anche la topologia-only per la pipeline CircuiTikZ.
-    // Nome derivato: se file_output finisce con ".dot" lo sostituiamo con
-    // ".tikz.dot", altrimenti append.
-    std::string tikz_out = file_output;
-    const std::string ext = ".dot";
-    if (tikz_out.size() >= ext.size() &&
-        tikz_out.compare(tikz_out.size() - ext.size(), ext.size(), ext) == 0) {
-        tikz_out.resize(tikz_out.size() - ext.size());
-    }
-    tikz_out += ".tikz.dot";
-    salva_tikz_dot(tikz_out, circuito);
+    salva_tikz_dot(with_extension(file_output, ".tikz.dot"), circuito);
 
     // assemblo le matrici del Metodo delle Correnti di Maglia
     Eigen::MatrixXd R;          // resistenze (m x m)
@@ -110,26 +115,16 @@ int main (const int argc, char* argv[]) {
     // tensioni sui resistori: V = R B i
     Eigen::VectorXd V;
     calc_voltage(R, B, i, resistor_branches, V);
-    // salvo i cicli su file per la visualizzazione (un ciclo per riga,
-    // nodi separati da spazio). I cicli sono liste di archi: li percorro
-    // ricostruendo la sequenza dei nodi nel verso di percorrenza.
-    std::string cycles_out = file_output;
-    if (cycles_out.size() >= ext.size() &&
-        cycles_out.compare(cycles_out.size() - ext.size(), ext.size(), ext) == 0) {
-        cycles_out.resize(cycles_out.size() - ext.size());
-    }
-    cycles_out += ".cycles.txt";
-    // I cicli sono gia' sequenze ordinate di nodi nel verso di percorrenza, senza
-    // duplicato di chiusura (la maglia si chiude in wrap-around). Le scrivo cosi'
-    // come sono: il visualizzatore chiude la maglia col wrap-around.
-    std::ofstream cycles_file(cycles_out);
+    // salvo i cicli su file per la visualizzazione (un ciclo per riga, nodi
+    // separati da spazio). I cicli sono gia' sequenze ordinate di nodi nel verso
+    // di percorrenza, senza duplicato di chiusura (la maglia si chiude in
+    // wrap-around): le scrivo cosi' come sono, il visualizzatore chiude la maglia.
+    std::ofstream cycles_file(with_extension(file_output, ".cycles.txt"));
     for (const auto& cycle : essential_cycles) {
         if (cycle.empty()) continue;
         for (int node : cycle) {
             cycles_file << node << " ";
-            std::cout << node << " ";
         }
         cycles_file << "\n";
-        std::cout << std::endl;
     }
 }
