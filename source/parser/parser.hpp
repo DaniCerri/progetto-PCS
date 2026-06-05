@@ -1,10 +1,12 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "unidirected_graph.hpp"
 
 class Parser {
     private:
         std::string read_file(const std::string& file_path);
+        std::vector<std::string> split(const std::string& row, const std::string& del);
         void parse_file(
             const std::string& data,
             UnidirectedGraph<int>& graph_out,

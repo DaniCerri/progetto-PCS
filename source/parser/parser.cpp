@@ -3,8 +3,20 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <iostream>
 #include "unidirected_graph.hpp"
+
+// Spezza una riga nei suoi token, usando come separatore qualsiasi
+// carattere presente in 'del' (sequenze consecutive contano come uno).
+std::vector<std::string> Parser::split(const std::string& row, const std::string& del) {
+    std::vector<std::string> tokens;
+    size_t start = row.find_first_not_of(del);
+    while (start != std::string::npos) {
+        size_t end = row.find_first_of(del, start);
+        tokens.push_back(row.substr(start, end - start));
+        start = row.find_first_not_of(del, end);
+    }
+    return tokens;
+}
 
 // Metodo per leggere un file dato un percorso e ritornarlo come stringa
 std::string Parser::read_file(const std::string& file_path) {
@@ -43,13 +55,7 @@ void Parser::parse_file(
         }
 
         // Dividiamo la riga in base al delimitatore (numero indefinito tra i valori)
-        std::vector<std::string> tokens;
-        size_t start = row.find_first_not_of(del);
-        while (start != std::string::npos) {
-            size_t end = row.find_first_of(del, start);
-            tokens.push_back(row.substr(start, end - start));
-            start = row.find_first_not_of(del, end);
-        }
+        std::vector<std::string> tokens = split(row, del);
 
         // Controlliamo che ci siano rimasti 4 elementi distinti
         if (tokens.size() != 4) {
@@ -80,14 +86,7 @@ void Parser::parse_file(
 }
 
 void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) {
-    std::cout << "Inizio la pipeline" << std::endl;
-
     std::string file_data = read_file(file_path);
-    std::cout << "File letto" << std::endl;
-
-    std::cout << "Inizio parsing" << std::endl;
-
     parse_file(file_data, graph_out, " \t\r\f\v");
-    std::cout << "File parsato" << std::endl;
 }
 
