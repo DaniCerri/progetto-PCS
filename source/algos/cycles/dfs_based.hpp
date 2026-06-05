@@ -4,23 +4,28 @@
 #include "../visit/stack.hpp"
 #include <vector>
 #include <list>
+#include <set>
 
-// Manteniamo esattamente la firma e la logica dell'Algoritmo 1 del PoliTo
+// Manteniamo esattamente la firma e la logica dell'Algoritmo 1 del PoliTo.
+// visited e' un std::set<T>: i nodi sono indicizzati per valore in un contenitore
+// associativo, non per posizione in un vettore. Cosi' etichette di nodo non
+// contigue o piu' grandi del numero di nodi (es. {1,2,5,10,20}) non causano
+// accessi fuori dai limiti.
 template<typename T>
-bool find_path(const UnidirectedGraph<T>& graph, const T& u, const T& v, 
-               std::vector<UnidirectedEdge<T>>& path, std::vector<bool>& visited) {
-    
-    visited[u] = true;
-    
+bool find_path(const UnidirectedGraph<T>& graph, const T& u, const T& v,
+               std::vector<UnidirectedEdge<T>>& path, std::set<T>& visited) {
+
+    visited.insert(u);
+
     if (u == v) return true;
-    
+
     // Sfruttiamo il nuovo metodo incident_edges che interroga solo i rami adiacenti
     for (const auto& edge : graph.incident_edges(u)) {
-        
+
         // CORREZIONE BUG: Determina chi è il vicino in un grafo non orientato
         T neighbor = (edge.from() == u) ? edge.to() : edge.from();
-        
-        if (!visited[neighbor]) {
+
+        if (!visited.contains(neighbor)) {
             // Salva l'arco (con le sue resistenze/componenti interni) prima di scendere in profondità
             path.push_back(edge); 
             
@@ -46,11 +51,11 @@ void find_essential_cycles_dfs(UnidirectedGraph<T>& graph, std::vector<std::vect
 
     std::vector<UnidirectedEdge<T>> path_buffer;
     path_buffer.reserve(num_nodes);
-    std::vector<bool> visited(num_nodes + 1, false);
+    std::set<T> visited;   // nodi visitati, indicizzati per valore (no assunzioni sulle etichette)
 
     for (const auto& edge : co_tree.all_edges()) {
         path_buffer.clear();
-        visited.assign(num_nodes + 1, false);
+        visited.clear();
 
         // Cerchiamo il cammino nell'albero di supporto tra i due estremi dell'arco del co-albero
         if (find_path(support_tree, edge.from(), edge.to(), path_buffer, visited)) {

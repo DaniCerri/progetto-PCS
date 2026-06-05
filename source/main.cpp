@@ -96,7 +96,8 @@ int main (const int argc, char* argv[]) {
     std::cout << "Termine noto v:\n" << v << std::endl;
 
     Eigen::VectorXd i(essential_cycles.size());
-    
+    i.setZero();   // Eigen non azzera: il gradiente coniugato parte da x0 = 0
+
     gradiente_coniugato(
         B.transpose() * R * B,  // Matrice dei coefficienti
         v,                      // Vettore dei termini noti
