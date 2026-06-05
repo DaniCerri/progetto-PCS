@@ -21,13 +21,12 @@ void calc_voltage(
     V = R * branch_current;                         // v_R = R B i
 
     for (size_t k = 0; k < resistor_branches.size(); ++k) {
-        for (const auto& c : resistor_branches[k].get_components()) {
-            if (!c.is_resistor()) continue;
-            // tensione del singolo resistore: V = R_comp * I_ramo
-            // (coincide con V(k) se il ramo ha un solo resistore)
-            const double v_comp = c.get_value() * branch_current(k);
-            std::cout << c.get_name() << ": V = " << v_comp
+        const Component& c = resistor_branches[k].get_component();
+        if (!c.is_resistor()) continue;
+        // tensione del singolo resistore: V = R_comp * I_ramo
+        // (coincide con V(k) se il ramo ha un solo resistore)
+        const double v_comp = c.get_value() * branch_current(k);
+        std::cout << c.get_name() << ": V = " << v_comp
                       << " volts, I = " << branch_current(k) << " amps." << std::endl;
-        }
     }
 }
