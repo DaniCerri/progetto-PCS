@@ -18,6 +18,11 @@ public:
     UnidirectedEdge(const T& s, const T& d)
         : source(s < d ? s : d),
           destination(s < d ? d : s) {}
+    
+    UnidirectedEdge(const T& s, const T& d, const Component& c)
+        : source(s < d ? s : d),
+          destination(s < d ? d : s),
+          component(c) {}
 
     const T& from() const { return source; }
     const T& to()   const { return destination; }
