@@ -2,7 +2,7 @@
 #include "unidirected_graph/unidirected_graph.hpp"
 #include "visit/graph_visit.hpp"
 #include "visit/stack.hpp"
-#include "solver/dijkstra.hpp"
+#include "dijkstra.hpp"
 #include <vector>
 #include <list>
 #include <limits>
