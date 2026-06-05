@@ -19,7 +19,8 @@ enum class CycleType { DFS, DePina };
 // all_edges() restituisce uno std::set -> gia' ordinato per (from,to),
 // e il costruttore di UnidirectedEdge forza from<to (verso nodo minore->maggiore,
 // come richiesto dalla specifica). row_of lega arco -> riga in O(log m);
-// resistor_branches[i] e' l'arco stesso, .get_components() i suoi componenti interni.
+// modello a singolo componente per arco: resistor_branches[i] e' l'arco stesso,
+// .get_component() il suo unico componente (resistore).
 template<typename T>
 void build_matrices(
     UnidirectedGraph<T>& graph,
@@ -39,7 +40,7 @@ void build_matrices(
     }
     const size_t n = fundamental_cycles_out.size();
 
-    // 2. numerazione resistori: rami con almeno un resistore, ordine lessicografico
+    // 2. numerazione resistori: archi il cui componente e' un resistore, ordine lessicografico
     std::vector<UnidirectedEdge<T>>& resistor_branches = resistor_branches_out;  // riga i -> arco
     resistor_branches.clear();
     std::map<UnidirectedEdge<T>, size_t> row_of;         // arco  -> riga
@@ -51,7 +52,7 @@ void build_matrices(
     }
     const size_t m = resistor_branches.size();
 
-    // 3. R diagonale (somma dei resistori in serie sullo stesso ramo)
+    // 3. R diagonale: un resistore per arco -> R(i,i) = valore del componente
     resistance_matrix_out = Eigen::MatrixXd::Zero(m, m);
     for (size_t i = 0; i < m; ++i) {
         resistance_matrix_out(i, i) = resistor_branches[i].get_component().get_value();

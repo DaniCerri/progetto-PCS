@@ -5,6 +5,7 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <stdexcept>
 #include "unidirected_edge.hpp"
 
 template <typename T>
@@ -25,18 +26,22 @@ public:
     // non prevedo di poter aggiungere nodi senza archi, non creo quindi nessun metodo add.node()
     // ma nel caso in cui si provi ad aggiungere un arco i cui nodi non sono presenti nel set, allora
     // vengono aggiunti automaticamente
+    // Modello a singolo componente per arco: due componenti sugli stessi nodi
+    // (u,v) NON possono condividere lo stesso arco. operator== confronta solo gli
+    // estremi, quindi un secondo add_edge sullo stesso (u,v) verrebbe scartato in
+    // silenzio perdendo il componente -> lanciamo invece un errore esplicito.
+    // Rami in parallelo o componenti in serie vanno modellati con nodi intermedi.
     void add_edge(const T& u, const T& v, const Component& component) {
         UnidirectedEdge<T> e(u, v, component);
-        for (auto& x : edges)
-            if (x == e) return;
-        edges.push_back(e);
-        vertices.insert(u);
-        vertices.insert(v);
+        add_edge(e);
     }
 
     void add_edge(const UnidirectedEdge<T>& e) {
         for (auto& x : edges)
-            if (x == e) return;
+            if (x == e)
+                throw std::runtime_error(
+                    "add_edge: arco duplicato - un solo componente per arco "
+                    "(usa nodi intermedi per rami paralleli/serie)");
         edges.push_back(e);
         vertices.insert(e.from());
         vertices.insert(e.to());
