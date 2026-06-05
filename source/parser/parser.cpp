@@ -25,7 +25,7 @@ std::string Parser::read_file(const std::string& file_path) {
     
     // controllo se il file e' stato aperto correttamente
     if (!file_stream.is_open()) {
-        throw std::runtime_error("Errore: Impossibile aprire il file " + file_path);
+        throw std::runtime_error("Impossibile aprire il file " + file_path);
     }
     
     // leggo il contenuto del file in un buffer

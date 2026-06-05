@@ -45,86 +45,103 @@ static std::string with_extension(const std::string& dot_path, const std::string
 }
 
 int main (const int argc, char* argv[]) {
-    if (argc < 2 || argc > 4) {
-        std::cerr << "Utilizzo: " << argv[0] << " <file_input> [file_output] [dfs/depina]" << std::endl;
+    if (argc < 2) {
+        std::cerr << "Utilizzo: " << argv[0]
+                  << " <file_input> [file_output] [dfs|depina] [-v]" << std::endl;
         return 1;
     }
 
     std::string file_input = argv[1];
-    std::string file_output;
+    std::string file_output;                 // vuoto -> percorso di default
     CycleType method = CycleType::DFS;
-    if (argc > 2) {
-        std::string chosen_method = argv[argc-1];
-        if (chosen_method == "dfs") {
+    bool verbose = false;
+
+    // Argomenti opzionali posizionali liberi: 'dfs'/'depina' scelgono il metodo,
+    // '-v'/'--verbose' attiva i dump diagnostici, qualunque altro token e' il file
+    // di output. Cosi' sia 'prog in out' che 'prog in depina' sono validi (prima
+    // 'prog in out' veniva interpretato come metodo e rifiutato).
+    for (int a = 2; a < argc; ++a) {
+        const std::string arg = argv[a];
+        if (arg == "dfs") {
             method = CycleType::DFS;
-        } else if (chosen_method == "depina") {
+        } else if (arg == "depina") {
             method = CycleType::DePina;
+        } else if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        } else if (file_output.empty()) {
+            file_output = arg;
         } else {
-            std::cerr << "Metodo non valido. Scegliere tra 'dfs' e 'depina'." << std::endl;
+            std::cerr << "Argomento non riconosciuto: " << arg << std::endl;
             return 1;
         }
     }
-    if (argc > 3) {
-        file_output = argv[2];
-    } else {
+    if (file_output.empty())
         file_output = default_output_path(file_input);
-    }
 
-    Parser parser;
-    UnidirectedGraph<int> circuito;
+    try {
+        Parser parser;
+        UnidirectedGraph<int> circuito;
 
-    // leggo la netlist
-    parser.pipeline(file_input, circuito);
+        // leggo la netlist
+        parser.pipeline(file_input, circuito);
 
-    // visualizzo il circuito
-    salva_dot(file_output, circuito);
-    // salvo anche la topologia-only per la pipeline CircuiTikZ.
-    salva_tikz_dot(with_extension(file_output, ".tikz.dot"), circuito);
+        // visualizzo il circuito
+        salva_dot(file_output, circuito);
+        // salvo anche la topologia-only per la pipeline CircuiTikZ.
+        salva_tikz_dot(with_extension(file_output, ".tikz.dot"), circuito);
 
-    // assemblo le matrici del Metodo delle Correnti di Maglia
-    Eigen::MatrixXd R;          // resistenze (m x m)
-    Eigen::MatrixXd B;          // incidenza  (m x n)
-    Eigen::VectorXd v;          // termine noto (n)
-    std::vector<std::vector<int>> essential_cycles;        // maglie = sequenze di nodi
-    std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
-    build_matrices(circuito, R, B, v, essential_cycles, resistor_branches, method);
+        // assemblo le matrici del Metodo delle Correnti di Maglia
+        Eigen::MatrixXd R;          // resistenze (m x m)
+        Eigen::MatrixXd B;          // incidenza  (m x n)
+        Eigen::VectorXd v;          // termine noto (n)
+        std::vector<std::vector<int>> essential_cycles;        // maglie = sequenze di nodi
+        std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
+        build_matrices(circuito, R, B, v, essential_cycles, resistor_branches, method);
 
-    for (const auto& cycle : essential_cycles) {
-        for (int node : cycle) {
-            std::cout << node << " ";
+        Eigen::VectorXd i(essential_cycles.size());
+        i.setZero();   // Eigen non azzera: il gradiente coniugato parte da x0 = 0
+
+        const unsigned int iters = gradiente_coniugato(
+            B.transpose() * R * B,  // Matrice dei coefficienti
+            v,                      // Vettore dei termini noti
+            i,                      // Vettore incognite
+            1e-10                   // Tolleranza
+        );
+
+        // dump diagnostici solo con -v: lo stdout "pulito" e' la sola lista
+        // delle tensioni sui resistori (formato della specifica, sez. 7).
+        if (verbose) {
+            for (const auto& cycle : essential_cycles) {
+                for (int node : cycle) std::cerr << node << " ";
+                std::cerr << "\n";
+            }
+            std::cerr << "Matrice delle resistenze R:\n" << R << "\n";
+            std::cerr << "Matrice di incidenza B:\n" << B << "\n";
+            std::cerr << "Termine noto v:\n" << v << "\n";
+            std::cerr << "Correnti di maglia i:\n" << i << "\n";
+            std::cerr << "Numero di iterazioni: " << iters << std::endl;
         }
-        std::cout << std::endl;
-    }
 
-    std::cout << "Matrice delle resistenze R:\n" << R << std::endl;
-    std::cout << "Matrice di incidenza B:\n" << B << std::endl;
-    std::cout << "Termine noto v:\n" << v << std::endl;
+        // tensioni sui resistori: V = R B i  (output richiesto su stdout)
+        Eigen::VectorXd V;
+        calc_voltage(R, B, i, resistor_branches, V);
 
-    Eigen::VectorXd i(essential_cycles.size());
-    i.setZero();   // Eigen non azzera: il gradiente coniugato parte da x0 = 0
-
-    gradiente_coniugato(
-        B.transpose() * R * B,  // Matrice dei coefficienti
-        v,                      // Vettore dei termini noti
-        i,                      // Vettore incognite
-        1e-10                   // Tolleranza
-    );
-
-    std::cout << "Correnti di maglia i:\n" << i << std::endl;
-
-    // tensioni sui resistori: V = R B i
-    Eigen::VectorXd V;
-    calc_voltage(R, B, i, resistor_branches, V);
-    // salvo i cicli su file per la visualizzazione (un ciclo per riga, nodi
-    // separati da spazio). I cicli sono gia' sequenze ordinate di nodi nel verso
-    // di percorrenza, senza duplicato di chiusura (la maglia si chiude in
-    // wrap-around): le scrivo cosi' come sono, il visualizzatore chiude la maglia.
-    std::ofstream cycles_file(with_extension(file_output, ".cycles.txt"));
-    for (const auto& cycle : essential_cycles) {
-        if (cycle.empty()) continue;
-        for (int node : cycle) {
-            cycles_file << node << " ";
+        // salvo i cicli su file per la visualizzazione (un ciclo per riga, nodi
+        // separati da spazio). I cicli sono gia' sequenze ordinate di nodi nel verso
+        // di percorrenza, senza duplicato di chiusura (la maglia si chiude in
+        // wrap-around): le scrivo cosi' come sono, il visualizzatore chiude la maglia.
+        std::ofstream cycles_file(with_extension(file_output, ".cycles.txt"));
+        for (const auto& cycle : essential_cycles) {
+            if (cycle.empty()) continue;
+            for (int node : cycle) {
+                cycles_file << node << " ";
+            }
+            cycles_file << "\n";
         }
-        cycles_file << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << "Errore: " << e.what() << std::endl;
+        return 1;
     }
+
+    return 0;
 }

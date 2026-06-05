@@ -1,7 +1,6 @@
 #include "gradiente_coniugato.hpp"
-#include <iostream>
 
-void gradiente_coniugato(
+unsigned int gradiente_coniugato(
     const Eigen::MatrixXd& A,
     const Eigen::VectorXd& b,
     Eigen::VectorXd& x,
@@ -27,5 +26,5 @@ void gradiente_coniugato(
         k++;
     }
 
-    std::cout << "Numero di iterazioni: " << k << std::endl;
+    return k;
 }
