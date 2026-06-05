@@ -126,12 +126,23 @@ int main (const int argc, char* argv[]) {
         const auto& last  = cycle.back();
         int cur = (first.from() == last.from() || first.from() == last.to())
                       ? first.from() : first.to();
-        cycles_file << cur << " ";
-        std::cout << cur << " ";
+        // ricostruisco la sequenza dei nodi nel verso di percorrenza
+        std::vector<int> seq;
+        seq.push_back(cur);
         for (const auto& edge : cycle) {
             cur = (edge.from() == cur) ? edge.to() : edge.from();
-            cycles_file << cur << " ";
-            std::cout << cur << " ";
+            seq.push_back(cur);
+        }
+        // l'ultimo nodo coincide col primo (il ciclo si chiude): lo ometto.
+        // Il visualizzatore chiude la maglia col wrap-around; lasciare il
+        // doppione genererebbe un arco degenere e, nel layout bus-bar,
+        // saltava il tratto lungo il rail quando il rail e' a inizio/fine
+        // sequenza (freccia mancante).
+        if (seq.size() >= 2 && seq.front() == seq.back())
+            seq.pop_back();
+        for (int node : seq) {
+            cycles_file << node << " ";
+            std::cout << node << " ";
         }
         cycles_file << "\n";
         std::cout << std::endl;
