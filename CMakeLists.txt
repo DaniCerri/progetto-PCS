@@ -34,3 +34,31 @@ target_include_directories(Eseguibile PRIVATE
 
 # Collega Eigen3 all'eseguibile
 target_link_libraries(Eseguibile PUBLIC Eigen3::Eigen)
+
+# ----------------------------------------------------------------------------
+# Test (CTest). Disattivabili con -DBUILD_TESTS=OFF per la sola consegna.
+# Eseguire con: ctest --output-on-failure  (oppure ./Tests direttamente)
+# ----------------------------------------------------------------------------
+option(BUILD_TESTS "Compila la suite di test" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    add_executable(Tests
+        test/test_main.cpp
+        source/parser/parser.cpp
+        source/algos/solver/gradiente_coniugato.cpp
+    )
+    target_include_directories(Tests PRIVATE
+        source
+        source/parser
+        source/unidirected_graph
+        source/algos
+        source/algos/cycles
+        source/algos/visit
+        source/algos/solver
+    )
+    target_link_libraries(Tests PUBLIC Eigen3::Eigen)
+    # percorso assoluto delle netlist di test, indipendente dalla cwd
+    target_compile_definitions(Tests PRIVATE
+        TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/netlists")
+    add_test(NAME unit COMMAND Tests)
+endif()
