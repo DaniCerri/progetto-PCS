@@ -62,6 +62,16 @@ void Parser::parse_file(
             throw std::runtime_error("Riga malformata: " + row);
         }
 
+        // Validiamo il tipo (prima colonna): deve iniziare per 'R' (resistore) o
+        // 'V' (generatore). E' qui il confine di fiducia sull'input dell'utente,
+        // cosi' la classificazione a valle (Component::is_resistor) non si fonda
+        // su un nome arbitrario non verificato.
+        const char tipo = tokens[0].empty() ? '\0' : tokens[0][0];
+        if (tipo != 'R' && tipo != 'V') {
+            throw std::runtime_error(
+                "Tipo componente non valido (atteso R o V) nella riga: " + row);
+        }
+
         // Convertiamo valore e nodi, intercettando input non numerico
         // per dare un messaggio con il contesto della riga invece di
         // lasciar propagare std::invalid_argument/out_of_range grezzi.

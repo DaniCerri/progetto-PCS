@@ -52,7 +52,7 @@ std::vector<T> find_minimal_cycle(const UnidirectedGraph<T>& graph, const std::v
     std::vector<UnidirectedEdge<T>> edge_list(s.begin(), s.end());
     Component dummy_comp ("dummy", 0.0, 0); // Componente fittizio per gli archi del grafo sollevato
 
-    for (int i = 0; i < edge_list.size(); ++i) {
+    for (size_t i = 0; i < edge_list.size(); ++i) {
         auto edge = edge_list[i];
         // Creiamo i due vertici "attivi" e "inattivi" per ogni arco del grafo originale
         T u = edge.from();
@@ -124,12 +124,12 @@ std::vector<std::vector<T>> De_Pina(UnidirectedGraph<T>& graph, std::vector<std:
         // Aggiorniamo i vettori S successivi
         for (int j = i + 1; j < k; ++j) {
             int scalar_product = 0;
-            for (int x = 0; x < inc_i.size(); ++x) { // Prodotto scalare tra C[i] (incidenza) e S[j]
+            for (size_t x = 0; x < inc_i.size(); ++x) { // Prodotto scalare tra C[i] (incidenza) e S[j]
                 scalar_product += inc_i[x] * S[j][x];
             }
             scalar_product %= 2; // Applichiamo l'operazione modulo 2
             if (scalar_product == 1) {
-                for (int x = 0; x < inc_i.size(); ++x) {
+                for (size_t x = 0; x < inc_i.size(); ++x) {
                     S[j][x] = S[j][x] ^ S[i][x]; // Differenza simmetrica XOR tra S[j] e S[i]
                 }
             }
@@ -156,7 +156,7 @@ void find_essential_cycles_DePina(UnidirectedGraph<T>& graph, std::vector<std::v
     // Pongo 1 in posizione i per ogni arco del grafo presente nel co_tree
     int i = 0;
     for (const auto& edge : co_tree.all_edges()) {
-        for (int j = 0; j < edge_list.size(); ++j) {
+        for (size_t j = 0; j < edge_list.size(); ++j) {
             if (edge_list[j] == edge) {
                 S[i][j] = true; // Segniamo l'arco come presente in S[i]
                 break;
