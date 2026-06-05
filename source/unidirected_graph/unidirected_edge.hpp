@@ -8,7 +8,7 @@ template <typename T>
 class UnidirectedEdge {
     T source;
     T destination;
-    Component components;
+    Component component;
 
 public:
     // costruttore di default

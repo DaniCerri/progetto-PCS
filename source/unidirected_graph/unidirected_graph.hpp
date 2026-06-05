@@ -115,14 +115,13 @@ public:
         for (const auto& v : vertices)
             os << "  " << v << ";\n";
         for (const auto& e : edges) {
-            for (const auto& c : e.get_components()) {
-                os << "  " << e.from() << " -- " << e.to()
-                   << " [comp=\"" << c.get_name() << "\""
-                   << ", val=\"" << c.get_value() << "\""
-                   << ", type=\"" << (c.is_resistor() ? "R" : "V") << "\""
-                   << ", pos=\"" << c.get_positive_node() << "\""
-                   << "];\n";
-            }
+            const auto& c = e.get_component();
+            os << "  " << e.from() << " -- " << e.to()
+                << " [comp=\"" << c.get_name() << "\""
+                << ", val=\"" << c.get_value() << "\""
+                << ", type=\"" << (c.is_resistor() ? "R" : "V") << "\""
+                << ", pos=\"" << c.get_positive_node() << "\""
+                << "];\n"; 
         }
         os << "}\n";
     }
@@ -151,43 +150,43 @@ public:
         // componenti: un nodo per ciascun componente di ciascun arco
         os << "  // componenti\n";
         for (const auto& e : edges) {
-            for (const auto& c : e.get_components()) {
-                const std::string id = "c_" + c.get_name();
-                if (c.is_resistor()) {
-                    os << "  " << id
-                       << " [shape=rectangle, style=\"filled,rounded\","
-                       << " fillcolor=white, color=black,"
-                       << " label=\"" << c.get_name() << "\\n"
-                       << c.get_value() << "Ω\"];\n";
-                } else {
-                    os << "  " << id
-                       << " [shape=circle, style=filled, fillcolor=lightyellow,"
-                       << " color=blue, fontcolor=blue,"
-                       << " label=\"" << c.get_name() << "\\n"
-                       << c.get_value() << "V\"];\n";
-                }
-                // connessioni nodo_circuito -- componente -- nodo_circuito.
-                // Per generatori marchiamo "+"/"-" sui due archi: il lato connesso
-                // al positive_node riceve "+", l'altro "-".
-                const int pos = c.get_positive_node();
-                const T& other = (pos == e.from()) ? e.to() : e.from();
-                if (c.is_resistor()) {
-                    // resistore: "+" solo sul terminale positivo (taillabel),
-                    // l'altro arco resta neutro
-                    os << "  n" << pos << " -- " << id
-                       << " [headlabel=\"+\", labelfontcolor=red,"
-                       << " labeldistance=1.5];\n";
-                    os << "  " << id << " -- n" << other << ";\n";
-                } else {
-                    // generatore: "+" e "-" sui rispettivi archi
-                    os << "  n" << pos << " -- " << id
-                       << " [headlabel=\"+\", labelfontcolor=red,"
-                       << " labeldistance=1.5];\n";
-                    os << "  " << id << " -- n" << other
-                       << " [taillabel=\"-\", labelfontcolor=red,"
-                       << " labeldistance=1.5];\n";
-                }
+            const auto& c = e.get_component();
+            const std::string id = "c_" + c.get_name();
+            if (c.is_resistor()) {
+                os << "  " << id
+                    << " [shape=rectangle, style=\"filled,rounded\","
+                    << " fillcolor=white, color=black,"
+                    << " label=\"" << c.get_name() << "\\n"
+                    << c.get_value() << "Ω\"];\n";
+            } else {
+                os << "  " << id
+                    << " [shape=circle, style=filled, fillcolor=lightyellow,"
+                    << " color=blue, fontcolor=blue,"
+                    << " label=\"" << c.get_name() << "\\n"
+                    << c.get_value() << "V\"];\n";
             }
+            // connessioni nodo_circuito -- componente -- nodo_circuito.
+            // Per generatori marchiamo "+"/"-" sui due archi: il lato connesso
+            // al positive_node riceve "+", l'altro "-".
+            const int pos = c.get_positive_node();
+            const T& other = (pos == e.from()) ? e.to() : e.from();
+            if (c.is_resistor()) {
+                // resistore: "+" solo sul terminale positivo (taillabel),
+                // l'altro arco resta neutro
+                os << "  n" << pos << " -- " << id
+                    << " [headlabel=\"+\", labelfontcolor=red,"
+                    << " labeldistance=1.5];\n";
+                os << "  " << id << " -- n" << other << ";\n";
+            } else {
+                // generatore: "+" e "-" sui rispettivi archi
+                os << "  n" << pos << " -- " << id
+                    << " [headlabel=\"+\", labelfontcolor=red,"
+                    << " labeldistance=1.5];\n";
+                os << "  " << id << " -- n" << other
+                    << " [taillabel=\"-\", labelfontcolor=red,"
+                    << " labeldistance=1.5];\n";
+            }
+            
         }
         os << "}\n";
     }
