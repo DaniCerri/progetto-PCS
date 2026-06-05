@@ -24,28 +24,36 @@ lista delle tensioni/correnti sui resistori, nel formato della specifica.
 
 ## Test
 La cartella `test/` contiene una suite automatica (nessun framework esterno, solo
-Eigen) integrata in CTest. Si compila insieme al resto e si esegue con:
+Eigen) integrata in CTest, divisa per area funzionale: un eseguibile per area, un
+test CTest per area. Si compila insieme al resto ed eseguono tutti con:
 ```sh
 cd build
-ctest --output-on-failure      # oppure ./Tests per l'output dettagliato
+make            # (ri)compila anche i test
+make test       # esegue tutte le suite (parser, graph, cycles, solver)
+ctest --output-on-failure   # idem, con dettaglio dei check falliti
+./test_solver               # in alternativa, una singola suite
 ```
 Per la sola consegna i test si possono escludere con `cmake .. -DBUILD_TESTS=OFF`.
 
-Contenuto:
-- `test/test_main.cpp` — harness con macro `CHECK`/`CHECK_NEAR`, ritorna codice
-  d'errore != 0 se almeno un check fallisce.
+Struttura:
+- `test/test_harness.hpp` — harness condiviso: macro `CHECK`/`CHECK_NEAR`, helper
+  `load`/`solve`/`throws`; `report()` ritorna codice != 0 se un check fallisce.
+- `test/test_parser.cpp` — parsing della netlist.
+- `test/test_graph.cpp` — struttura dati `UnidirectedGraph`.
+- `test/test_cycles.cpp` — individuazione delle maglie (DFS e De Pina).
+- `test/test_solver.cpp` — sistema lineare e tensioni.
 - `test/netlists/` — netlist di input usate dai test.
 
 Cosa viene verificato:
-- **Golden (valori dalla specifica)**: netlist della sez. 7 del PDF (tensioni e
-  correnti su tutti i resistori, per *entrambi* i metodi DFS e De Pina); esempio
-  a 2 maglie della sez. 4 (moduli delle tensioni `10/11, 100/11, 120/11`); maglia
-  singola in serie (`I = 12/(1+2) = 4 A`).
-- **Proprietà / invarianti** (senza valori calcolati a mano): numero di maglie
-  `= |E| - |V| + 1`; accordo tra DFS e De Pina sulle tensioni fisiche dei
-  resistori; residuo del sistema `||B^T R B i - v|| ≈ 0`; stessa corrente in serie.
-- **Robustezza del parser**: spazi multipli, tab e righe vuote non cambiano la
-  soluzione (`messy_sec7.txt` vs `example_sec7.txt`).
-- **Gestione errori**: riga malformata, tipo componente non valido e file mancante
-  sollevano un'eccezione (niente crash silenzioso); un secondo componente sullo
-  stesso arco (ramo in parallelo) viene rifiutato.
+- **parser**: robustezza a spazi/tab/righe vuote (`messy_sec7.txt` vs
+  `example_sec7.txt`), classificazione tipo R/V, errori (riga malformata, tipo non
+  valido, file mancante) che sollevano eccezione invece di crashare.
+- **graph**: normalizzazione `from<to`, inserimento automatico dei nodi, rifiuto
+  di archi duplicati (rami in parallelo), `neighbours`/`incident_edges`,
+  numerazione archi, differenza fra grafi (co-albero).
+- **cycles**: numero di maglie `= |E| - |V| + 1`; ogni maglia è un cammino chiuso
+  valido (archi consecutivi esistenti, chiusura wrap-around); accordo fra DFS e
+  De Pina sulle grandezze fisiche dei resistori.
+- **solver**: golden dalla specifica — sez. 7 del PDF (V e I su tutti i resistori,
+  entrambi i metodi), esempio a 2 maglie (moduli `10/11, 100/11, 120/11`), maglia
+  singola in serie (`I = 12/(1+2) = 4 A`); residuo `||B^T R B i - v|| ≈ 0`.

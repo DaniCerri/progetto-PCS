@@ -37,28 +37,36 @@ target_link_libraries(Eseguibile PUBLIC Eigen3::Eigen)
 
 # ----------------------------------------------------------------------------
 # Test (CTest). Disattivabili con -DBUILD_TESTS=OFF per la sola consegna.
-# Eseguire con: ctest --output-on-failure  (oppure ./Tests direttamente)
+# Un eseguibile per area (parser, graph, cycles, solver); 'make test' li esegue
+# tutti (richiede 'make' prima, per (ri)compilarli). Output dettagliato:
+#   ctest --output-on-failure   (oppure ./test_<area> direttamente)
 # ----------------------------------------------------------------------------
 option(BUILD_TESTS "Compila la suite di test" ON)
 if(BUILD_TESTS)
     enable_testing()
-    add_executable(Tests
-        test/test_main.cpp
+
+    # sorgenti non-header condivisi dai test (il resto e' header-only)
+    set(TEST_COMMON_SOURCES
         source/parser/parser.cpp
         source/algos/solver/gradiente_coniugato.cpp
     )
-    target_include_directories(Tests PRIVATE
-        source
-        source/parser
-        source/unidirected_graph
-        source/algos
-        source/algos/cycles
-        source/algos/visit
-        source/algos/solver
-    )
-    target_link_libraries(Tests PUBLIC Eigen3::Eigen)
-    # percorso assoluto delle netlist di test, indipendente dalla cwd
-    target_compile_definitions(Tests PRIVATE
-        TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/netlists")
-    add_test(NAME unit COMMAND Tests)
+
+    # una suite per area funzionale -> un test CTest separato
+    foreach(area parser graph cycles solver)
+        add_executable(test_${area} test/test_${area}.cpp ${TEST_COMMON_SOURCES})
+        target_include_directories(test_${area} PRIVATE
+            source
+            source/parser
+            source/unidirected_graph
+            source/algos
+            source/algos/cycles
+            source/algos/visit
+            source/algos/solver
+        )
+        target_link_libraries(test_${area} PUBLIC Eigen3::Eigen)
+        # percorso assoluto delle netlist di test, indipendente dalla cwd
+        target_compile_definitions(test_${area} PRIVATE
+            TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/test/netlists")
+        add_test(NAME ${area} COMMAND test_${area})
+    endforeach()
 endif()
