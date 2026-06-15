@@ -16,8 +16,7 @@ CTestTestfile.cmake
 _deps/
 *.cmake.in
 
-#output
-out/grafi/*
+__pycache__/
 
 # Make generated files
 Makefile
