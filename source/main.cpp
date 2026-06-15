@@ -19,7 +19,6 @@ void salva_tikz_dot(const std::string& nome_file, const UnidirectedGraph<int>& c
     to_tikz_dot(circuito, file, "Circuito");
 }
 
-// Toglie il suffisso ".txt" da un percorso, se presente.
 static std::string strip_suffix(const std::string& path, const std::string& suffix) {
     if (path.size() >= suffix.size() &&
         path.compare(path.size() - suffix.size(), suffix.size(), suffix) == 0) {
@@ -28,18 +27,15 @@ static std::string strip_suffix(const std::string& path, const std::string& suff
     return path;
 }
 
-// Percorso di output di default: cartella ../out, stesso nome dell'input ma con
-// estensione .dot al posto di .txt (se non finisce in .txt, si appende .dot).
+// output di default: ../out/<nome input>.dot
 static std::string default_output_path(const std::string& file_input) {
     std::string base = file_input;
-    // tolgo l'eventuale percorso, tengo solo il nome del file
     const size_t slash = base.find_last_of("/\\");
     if (slash != std::string::npos) base = base.substr(slash + 1);
     return "../out/" + strip_suffix(base, ".txt") + ".dot";
 }
 
-// Deriva un percorso di output sostituendo l'eventuale ".dot" finale con new_ext
-// (es. ".tikz.dot", ".cycles.txt"); se non termina in ".dot", appende soltanto.
+// sostituisce il ".dot" finale con new_ext (o appende se assente)
 static std::string with_extension(const std::string& dot_path, const std::string& new_ext) {
     return strip_suffix(dot_path, ".dot") + new_ext;
 }
@@ -56,10 +52,7 @@ int main (const int argc, char* argv[]) {
     CycleType method = CycleType::DFS;
     bool verbose = false;
 
-    // Argomenti opzionali posizionali liberi: 'dfs'/'depina' scelgono il metodo,
-    // '-v'/'--verbose' attiva i dump diagnostici, qualunque altro token e' il file
-    // di output. Cosi' sia 'prog in out' che 'prog in depina' sono validi (prima
-    // 'prog in out' veniva interpretato come metodo e rifiutato).
+    // argomenti opzionali posizionali liberi: dfs/depina, -v, altrimenti file output
     for (int a = 2; a < argc; ++a) {
         const std::string arg = argv[a];
         if (arg == "dfs") {
@@ -82,34 +75,29 @@ int main (const int argc, char* argv[]) {
         Parser parser;
         UnidirectedGraph<int> circuito;
 
-        // leggo la netlist
         parser.pipeline(file_input, circuito);
 
-        // visualizzo il circuito
         salva_dot(file_output, circuito);
-        // salvo anche la topologia-only per la pipeline CircuiTikZ.
         salva_tikz_dot(with_extension(file_output, ".tikz.dot"), circuito);
 
-        // assemblo le matrici del Metodo delle Correnti di Maglia
         Eigen::MatrixXd R;          // resistenze (m x m)
         Eigen::MatrixXd B;          // incidenza  (m x n)
         Eigen::VectorXd v;          // termine noto (n)
-        std::vector<std::vector<int>> essential_cycles;        // maglie = sequenze di nodi
-        std::vector<UnidirectedEdge<int>> resistor_branches;   // riga i di B/R -> arco resistore
+        std::vector<std::vector<int>> essential_cycles;
+        std::vector<UnidirectedEdge<int>> resistor_branches;
         build_matrices(circuito, R, B, v, essential_cycles, resistor_branches, method);
 
         Eigen::VectorXd i(essential_cycles.size());
-        i.setZero();   // Eigen non azzera: il gradiente coniugato parte da x0 = 0
+        i.setZero();   // x0 = 0 per il gradiente coniugato
 
         const unsigned int iters = gradiente_coniugato(
-            B.transpose() * R * B,  // Matrice dei coefficienti
-            v,                      // Vettore dei termini noti
-            i,                      // Vettore incognite
-            1e-10                   // Tolleranza
+            B.transpose() * R * B,
+            v,
+            i,
+            1e-10
         );
 
-        // dump diagnostici solo con -v: lo stdout "pulito" e' la sola lista
-        // delle tensioni sui resistori (formato della specifica, sez. 7).
+        // i dump diagnostici vanno su stderr solo con -v: stdout = sole tensioni (spec. sez. 7)
         if (verbose) {
             for (const auto& cycle : essential_cycles) {
                 for (int node : cycle) std::cerr << node << " ";
@@ -122,14 +110,10 @@ int main (const int argc, char* argv[]) {
             std::cerr << "Numero di iterazioni: " << iters << std::endl;
         }
 
-        // tensioni sui resistori: V = R B i  (output richiesto su stdout)
         Eigen::VectorXd V;
         calc_voltage(R, B, i, resistor_branches, V);
 
-        // salvo i cicli su file per la visualizzazione (un ciclo per riga, nodi
-        // separati da spazio). I cicli sono gia' sequenze ordinate di nodi nel verso
-        // di percorrenza, senza duplicato di chiusura (la maglia si chiude in
-        // wrap-around): le scrivo cosi' come sono, il visualizzatore chiude la maglia.
+        // cicli su file (un ciclo per riga, nodi separati da spazio, senza chiusura)
         std::ofstream cycles_file(with_extension(file_output, ".cycles.txt"));
         for (const auto& cycle : essential_cycles) {
             if (cycle.empty()) continue;

@@ -11,14 +11,9 @@
 #include <algorithm>
 
 
-// Estrae la sequenza ORDINATA dei nodi del grafo originale seguendo la catena
-// pred del cammino minimo nel grafo sollevato (start = v+, end = v-).
-// I nodi sollevati (T,bool) si proiettano sulla prima componente: e' esattamente
-// il verso di percorrenza del ciclo minimo. start ed end proiettano sullo stesso
-// nodo base v, quindi si rimuove il duplicato di chiusura finale.
-// Cosi' De Pina espone i cicli gia' come cammino ordinato, senza riordini a valle.
-// (Helper specifico di De Pina: vive qui, non in dijkstra.hpp, perche' conosce la
-// convenzione dei nodi sollevati e della chiusura del ciclo.)
+// Segue la catena pred del cammino minimo nel grafo sollevato (start=v+, end=v-)
+// proiettando i nodi (T,bool) sulla prima componente: e' il verso di percorrenza
+// del ciclo. start ed end proiettano sullo stesso nodo base -> tolgo il doppione.
 template <typename T>
 std::vector<T> extract_cycle_nodes(
     const std::map<std::pair<T,bool>, std::pair<T,bool>>& pred,
@@ -35,49 +30,45 @@ std::vector<T> extract_cycle_nodes(
         current = it->second;
     }
     std::reverse(nodes.begin(), nodes.end());
-    // start ed end proiettano sullo stesso nodo base -> tolgo il doppione di chiusura
     if (nodes.size() >= 2 && nodes.front() == nodes.back())
         nodes.pop_back();
     return nodes;
 }
 
 
-// Restituisce il ciclo minimo come SEQUENZA ORDINATA di nodi (verso di percorrenza),
-// estratta direttamente dalla catena pred del cammino minimo nel grafo sollevato.
+// Ciclo minimo come sequenza ordinata di nodi, dalla catena pred del cammino
+// minimo nel grafo sollevato.
 template <typename T>
 std::vector<T> find_minimal_cycle(const UnidirectedGraph<T>& graph, const std::vector<bool>& S_i) {
     UnidirectedGraph<std::pair<T,bool>> lifted_G;
 
     auto s = graph.all_edges();
     std::vector<UnidirectedEdge<T>> edge_list(s.begin(), s.end());
-    Component dummy_comp ("dummy", 0.0, 0); // Componente fittizio per gli archi del grafo sollevato
+    Component dummy_comp ("dummy", 0.0, 0);
 
     for (size_t i = 0; i < edge_list.size(); ++i) {
         auto edge = edge_list[i];
-        // Creiamo i due vertici "attivi" e "inattivi" per ogni arco del grafo originale
         T u = edge.from();
         T v = edge.to();
-        // Se (u,v) è attivo in S_i, allora aggiungiamo l'arco (u+, v-) a G' e l'arco (u-, v+) a G'
+        // arco attivo in S_i -> lifting incrociato (u+,v-)/(u-,v+); altrimenti diretto
         if (S_i[i]) {
-            lifted_G.add_edge({u,true}, {v,false}, dummy_comp); // Archi attivi
+            lifted_G.add_edge({u,true}, {v,false}, dummy_comp);
             lifted_G.add_edge({u,false}, {v,true}, dummy_comp);
         }
         else {
-            lifted_G.add_edge({u,true}, {v,true}, dummy_comp); // Archi inattivi
+            lifted_G.add_edge({u,true}, {v,true}, dummy_comp);
             lifted_G.add_edge({u,false}, {v,false}, dummy_comp);
         }
     }
 
-    int min_length = std::numeric_limits<int>::max(); // Lunghezza minima iniziale
-    std::vector<T> best_cycle;                        // sequenza nodi del ciclo minimo
+    int min_length = std::numeric_limits<int>::max();
+    std::vector<T> best_cycle;
 
-    // Calcolo del cammino minimo per ogni vertice v del grafo originale tra v- e v+ in lifted_G
+    // ciclo minimo = cammino minimo tra v- e v+ nel grafo sollevato, su tutti i v
     for (const auto& node : graph.all_nodes()) {
         auto [dist, pred] = dijkstra(lifted_G, {node,true});
-        // Impostiamo la lungheza minima del ciclo trovato come la lunghezza del cammino minimo tra v- e v+ in lifted_G
         if (dist.count({node,false}) && dist.at({node,false}) < min_length) {
             min_length = dist.at({node,false});
-            // sequenza ordinata di nodi del ciclo (verso di percorrenza)
             best_cycle = extract_cycle_nodes(pred, {node,true}, {node,false});
         }
     }
@@ -85,8 +76,7 @@ std::vector<T> find_minimal_cycle(const UnidirectedGraph<T>& graph, const std::v
 }
 
 
-// Converte un ciclo (sequenza di nodi) nel suo vettore di incidenza sugli archi,
-// usato solo per il bookkeeping GF(2) di De Pina (prodotto scalare con S[j]).
+// Vettore di incidenza del ciclo sugli archi, per il bookkeeping GF(2) di De Pina.
 template <typename T>
 std::vector<bool> cycle_to_incidence(
     const std::vector<T>& nodes,
@@ -103,34 +93,29 @@ std::vector<bool> cycle_to_incidence(
 }
 
 
-// Trascrivo lo pseudocodice dell'algoritmo di De Pina per trovare i cicli essenziali in un grafo non orientato.
-// I cicli risultanti sono restituiti come SEQUENZE ORDINATE di nodi.
+// Algoritmo di De Pina per la base dei cicli minimi: i cicli sono restituiti come
+// sequenze ordinate di nodi.
 template<typename T>
 std::vector<std::vector<T>> De_Pina(UnidirectedGraph<T>& graph, std::vector<std::vector<bool>>& S) {
-    // Salviamo il Numero di cicli essenziali
     int k = S.size();
-
-    // Cicli essenziali come sequenze di nodi
     std::vector<std::vector<T>> C(k);
 
-    // edge_list per convertire un ciclo nel suo vettore di incidenza (passo GF(2))
     auto s = graph.all_edges();
     std::vector<UnidirectedEdge<T>> edge_list(s.begin(), s.end());
 
     for (int i = 0; i < k; ++i) {
-        // Troviamo il Ciclo Minimo (lifting + dijkstra), gia' ordinato
         C[i] = find_minimal_cycle(graph, S[i]);
         const std::vector<bool> inc_i = cycle_to_incidence(C[i], edge_list);
-        // Aggiorniamo i vettori S successivi
+        // aggiorno gli S successivi: se <C[i], S[j]> dispari (mod 2) -> S[j] ^= S[i]
         for (int j = i + 1; j < k; ++j) {
             int scalar_product = 0;
-            for (size_t x = 0; x < inc_i.size(); ++x) { // Prodotto scalare tra C[i] (incidenza) e S[j]
+            for (size_t x = 0; x < inc_i.size(); ++x) {
                 scalar_product += inc_i[x] * S[j][x];
             }
-            scalar_product %= 2; // Applichiamo l'operazione modulo 2
+            scalar_product %= 2;
             if (scalar_product == 1) {
                 for (size_t x = 0; x < inc_i.size(); ++x) {
-                    S[j][x] = S[j][x] ^ S[i][x]; // Differenza simmetrica XOR tra S[j] e S[i]
+                    S[j][x] = S[j][x] ^ S[i][x];
                 }
             }
         }
@@ -149,24 +134,20 @@ void find_essential_cycles_DePina(UnidirectedGraph<T>& graph, std::vector<std::v
     auto s = graph.all_edges();
     std::vector<UnidirectedEdge<T>> edge_list(s.begin(), s.end());
 
-    // Inizializziamo il vettore S per tenere traccia degli archi essenziali
+    // S[i] = vettore di incidenza dell'i-esimo arco del co-albero
     int k = co_tree.all_edges().size();
     std::vector<std::vector<bool>> S(k, std::vector<bool>(edge_list.size(), false));
 
-    // Pongo 1 in posizione i per ogni arco del grafo presente nel co_tree
     int i = 0;
     for (const auto& edge : co_tree.all_edges()) {
         for (size_t j = 0; j < edge_list.size(); ++j) {
             if (edge_list[j] == edge) {
-                S[i][j] = true; // Segniamo l'arco come presente in S[i]
+                S[i][j] = true;
                 break;
             }
         }
         ++i;
     }
 
-    // De Pina restituisce i cicli gia' come sequenze ordinate di nodi
-    // (verso di percorrenza dal cammino di Dijkstra): nessun riordino a valle.
     essential_cycles = De_Pina(graph, S);
 }
-

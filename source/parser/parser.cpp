@@ -5,8 +5,7 @@
 #include <string>
 #include "unidirected_graph.hpp"
 
-// Spezza una riga nei suoi token, usando come separatore qualsiasi
-// carattere presente in 'del' (sequenze consecutive contano come uno).
+// separatore = qualsiasi carattere di 'del' (sequenze consecutive = un separatore)
 std::vector<std::string> Parser::split(const std::string& row, const std::string& del) {
     std::vector<std::string> tokens;
     size_t start = row.find_first_not_of(del);
@@ -18,24 +17,17 @@ std::vector<std::string> Parser::split(const std::string& row, const std::string
     return tokens;
 }
 
-// Metodo per leggere un file dato un percorso e ritornarlo come stringa
 std::string Parser::read_file(const std::string& file_path) {
-    // apro il file
     std::ifstream file_stream{file_path};
-    
-    // controllo se il file e' stato aperto correttamente
+
     if (!file_stream.is_open()) {
         throw std::runtime_error("Impossibile aprire il file " + file_path);
     }
-    
-    // leggo il contenuto del file in un buffer
+
     std::stringstream buffer;
     buffer << file_stream.rdbuf();
-    
-    // chiudo il file
+
     file_stream.close();
-    
-    // ritorno il contenuto del file
     return buffer.str();
 }
 
@@ -44,37 +36,30 @@ void Parser::parse_file(
     UnidirectedGraph<int>& graph_out,
     const std::string& del
 ) {
-    // Dividiamo la stringa in righe
-    std::stringstream ss(data);  // Stream con il contenuto del file
-    std::string row;  // riga temporanea
+    std::stringstream ss(data);
+    std::string row;
 
     while (std::getline(ss, row, '\n')) {
-        // Controlliamo se la riga è vuota o solo con spazi per saltarla
+        // salto righe vuote o di soli spazi
         if (row.find_first_not_of(" \n\r\t\f\v") == std::string::npos) {
             continue;
         }
 
-        // Dividiamo la riga in base al delimitatore (numero indefinito tra i valori)
         std::vector<std::string> tokens = split(row, del);
 
-        // Controlliamo che ci siano rimasti 4 elementi distinti
         if (tokens.size() != 4) {
             throw std::runtime_error("Riga malformata: " + row);
         }
 
-        // Validiamo il tipo (prima colonna): deve iniziare per 'R' (resistore) o
-        // 'V' (generatore). E' qui il confine di fiducia sull'input dell'utente,
-        // cosi' la classificazione a valle (Component::is_resistor) non si fonda
-        // su un nome arbitrario non verificato.
+        // confine di fiducia sull'input: il tipo deve iniziare per R o V, cosi' la
+        // classificazione a valle (Component::is_resistor) non si fonda su un nome arbitrario
         const char tipo = tokens[0].empty() ? '\0' : tokens[0][0];
         if (tipo != 'R' && tipo != 'V') {
             throw std::runtime_error(
                 "Tipo componente non valido (atteso R o V) nella riga: " + row);
         }
 
-        // Convertiamo valore e nodi, intercettando input non numerico
-        // per dare un messaggio con il contesto della riga invece di
-        // lasciar propagare std::invalid_argument/out_of_range grezzi.
+        // conversione con contesto della riga nel messaggio d'errore
         int n1, n2;
         double val;
         try {
@@ -85,12 +70,9 @@ void Parser::parse_file(
             throw std::runtime_error("Valore non numerico nella riga: " + row);
         }
 
-        // Costruiamo il componente: nome, valore, e nodo positivo (= primo nodo letto)
-        // Il segno del generatore nel termine noto verra' gestito a valle dal solver,
-        // confrontando positive_node con il verso di percorrenza della maglia.
+        // nodo positivo = primo nodo letto (n1); il segno del generatore e' gestito dal solver
         Component comp(tokens[0], val, n1);
 
-        // Aggiungiamo l'edge al grafo
         graph_out.add_edge(n1, n2, comp);
     }
 }
@@ -99,4 +81,3 @@ void Parser::pipeline(std::string& file_path, UnidirectedGraph<int>& graph_out) 
     std::string file_data = read_file(file_path);
     parse_file(file_data, graph_out, " \t\r\f\v");
 }
-
