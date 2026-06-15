@@ -57,3 +57,13 @@ Cosa viene verificato:
 - **solver**: golden dalla specifica — sez. 7 del PDF (V e I su tutti i resistori,
   entrambi i metodi), esempio a 2 maglie (moduli `10/11, 100/11, 120/11`), maglia
   singola in serie (`I = 12/(1+2) = 4 A`); residuo `||B^T R B i - v|| ≈ 0`.
+
+## Uso di strumenti di IA
+Per lo sviluppo ci siamo avvalsi di strumenti di intelligenza artificiale per due
+parti accessorie del progetto:
+- le funzioni di **rappresentazione grafica dei circuiti** (serializzazione in
+  formato DOT/GraphViz, `source/unidirected_graph/dot_serializer.hpp`);
+- alcune **netlist di test** in `test/netlists/`.
+
+Il nucleo algoritmico (parser, grafo, individuazione delle maglie, assemblaggio
+delle matrici e gradiente coniugato) è stato sviluppato da noi.
