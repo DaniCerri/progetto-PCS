@@ -1,0 +1,33 @@
+graph Circuito {
+  layout=neato;
+  splines=ortho;
+  overlap=false;
+  node [fontname="Helvetica"];
+  edge [fontname="Helvetica", penwidth=1.4, arrowhead=none];
+  n1 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="1"];
+  n2 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="2"];
+  n3 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="3"];
+  n4 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="4"];
+  n5 [shape=circle, style=filled, fillcolor=black, width=0.15, label="", xlabel="5"];
+  c_V1 [shape=circle, style=filled, fillcolor=lightyellow, color=blue, fontcolor=blue, label="V1\n30V"];
+  n1 -- c_V1 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_V1 -- n4 [taillabel="-", labelfontcolor=red, labeldistance=1.5];
+  c_V2 [shape=circle, style=filled, fillcolor=lightyellow, color=blue, fontcolor=blue, label="V2\n40V"];
+  n3 -- c_V2 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_V2 -- n5 [taillabel="-", labelfontcolor=red, labeldistance=1.5];
+  c_R1 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R1\n4Ω"];
+  n4 -- c_R1 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R1 -- n2;
+  c_R2 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R2\n10Ω"];
+  n1 -- c_R2 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R2 -- n2;
+  c_R3 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R3\n30Ω"];
+  n1 -- c_R3 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R3 -- n3;
+  c_R4 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R4\n10Ω"];
+  n3 -- c_R4 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R4 -- n2;
+  c_R5 [shape=rectangle, style="filled,rounded", fillcolor=white, color=black, label="R5\n4Ω"];
+  n2 -- c_R5 [headlabel="+", labelfontcolor=red, labeldistance=1.5];
+  c_R5 -- n5;
+}

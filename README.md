@@ -36,13 +36,13 @@ ctest --output-on-failure   # idem, con dettaglio dei check falliti
 Per la sola consegna i test si possono escludere con `cmake .. -DBUILD_TESTS=OFF`.
 
 Struttura:
-- `test/test_harness.hpp` — harness condiviso: macro `CHECK`/`CHECK_NEAR`, helper
+- `test/test_harness.hpp`, harness condiviso: macro `CHECK`/`CHECK_NEAR`, helper
   `load`/`solve`/`throws`; `report()` ritorna codice != 0 se un check fallisce.
-- `test/test_parser.cpp` — parsing della netlist.
-- `test/test_graph.cpp` — struttura dati `UnidirectedGraph`.
-- `test/test_cycles.cpp` — individuazione delle maglie (DFS e De Pina).
-- `test/test_solver.cpp` — sistema lineare e tensioni.
-- `test/netlists/` — netlist di input usate dai test.
+- `test/test_parser.cpp`: parsing della netlist.
+- `test/test_graph.cpp`: struttura dati `UnidirectedGraph`.
+- `test/test_cycles.cpp`: individuazione delle maglie (DFS e De Pina).
+- `test/test_solver.cpp`: sistema lineare e tensioni.
+- `test/netlists/`: netlist di input usate dai test.
 
 Cosa viene verificato:
 - **parser**: robustezza a spazi/tab/righe vuote (`messy_sec7.txt` vs
@@ -54,7 +54,7 @@ Cosa viene verificato:
 - **cycles**: numero di maglie `= |E| - |V| + 1`; ogni maglia è un cammino chiuso
   valido (archi consecutivi esistenti, chiusura wrap-around); accordo fra DFS e
   De Pina sulle grandezze fisiche dei resistori.
-- **solver**: golden dalla specifica — sez. 7 del PDF (V e I su tutti i resistori,
+- **solver**: golden dalla specifica, sez. 7 del PDF (V e I su tutti i resistori,
   entrambi i metodi), esempio a 2 maglie (moduli `10/11, 100/11, 120/11`), maglia
   singola in serie (`I = 12/(1+2) = 4 A`); residuo `||B^T R B i - v|| ≈ 0`.
 
